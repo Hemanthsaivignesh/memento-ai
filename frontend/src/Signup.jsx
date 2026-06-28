@@ -36,7 +36,7 @@ function Signup() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ name, email, password }),
+        body: JSON.stringify({ name, email, password, preferred_language: 'en' }),
       });
 
       const data = await response.json();
