@@ -1,8 +1,10 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import Sidebar from '../components/Sidebar';
 import Navbar from '../components/Navbar';
 
 function Privacy() {
+  const { t } = useTranslation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
@@ -10,7 +12,7 @@ function Privacy() {
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       
       <div className="flex-1 flex flex-col lg:ml-64">
-        <Navbar onMenuClick={() => setSidebarOpen(true)} title="Privacy" />
+        <Navbar onMenuClick={() => setSidebarOpen(true)} title={t('privacy.title')} />
         
         <main className="flex-1 p-6 overflow-y-auto">
           <div className="max-w-4xl mx-auto space-y-8">
@@ -21,8 +23,8 @@ function Privacy() {
                   <span className="text-4xl">🔒</span>
                 </div>
                 <div>
-                  <h2 className="text-2xl font-bold text-white">100% Private & Offline</h2>
-                  <p className="text-gray-400">Your data never leaves your device</p>
+                  <h2 className="text-2xl font-bold text-white">{t('privacy.subtitle')}</h2>
+                  <p className="text-gray-400">{t('privacy.description')}</p>
                 </div>
               </div>
             </div>
@@ -31,24 +33,24 @@ function Privacy() {
             <div className="bg-slate-800 rounded-xl p-6 border border-slate-700">
               <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
                 <span className="text-2xl">🤖</span>
-                AI Model
+                {t('privacy.aiModel')}
               </h3>
               <div className="space-y-3">
                 <div className="flex justify-between items-center py-3 border-b border-slate-700">
-                  <span className="text-gray-400">Model Type</span>
-                  <span className="text-white font-medium">Local LLM (llama.cpp)</span>
+                  <span className="text-gray-400">{t('privacy.modelType')}</span>
+                  <span className="text-white font-medium">{t('privacy.localLLM')}</span>
                 </div>
                 <div className="flex justify-between items-center py-3 border-b border-slate-700">
-                  <span className="text-gray-400">Inference</span>
-                  <span className="text-green-400 font-medium">Local CPU</span>
+                  <span className="text-gray-400">{t('privacy.inference')}</span>
+                  <span className="text-green-400 font-medium">{t('privacy.localCPU')}</span>
                 </div>
                 <div className="flex justify-between items-center py-3 border-b border-slate-700">
-                  <span className="text-gray-400">Cloud API</span>
-                  <span className="text-red-400 font-medium">Not Used</span>
+                  <span className="text-gray-400">{t('privacy.cloudAPI')}</span>
+                  <span className="text-red-400 font-medium">{t('privacy.notUsed')}</span>
                 </div>
                 <div className="flex justify-between items-center py-3">
-                  <span className="text-gray-400">Data Collection</span>
-                  <span className="text-green-400 font-medium">None</span>
+                  <span className="text-gray-400">{t('privacy.dataCollection')}</span>
+                  <span className="text-green-400 font-medium">{t('privacy.none')}</span>
                 </div>
               </div>
             </div>
@@ -57,24 +59,24 @@ function Privacy() {
             <div className="bg-slate-800 rounded-xl p-6 border border-slate-700">
               <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
                 <span className="text-2xl">💾</span>
-                Data Storage
+                {t('privacy.dataStorage')}
               </h3>
               <div className="space-y-3">
                 <div className="flex justify-between items-center py-3 border-b border-slate-700">
-                  <span className="text-gray-400">Database</span>
-                  <span className="text-white font-medium">Local SQLite</span>
+                  <span className="text-gray-400">{t('privacy.database')}</span>
+                  <span className="text-white font-medium">{t('privacy.localSQLite')}</span>
                 </div>
                 <div className="flex justify-between items-center py-3 border-b border-slate-700">
-                  <span className="text-gray-400">Location</span>
-                  <span className="text-white font-medium">Your Device</span>
+                  <span className="text-gray-400">{t('privacy.location')}</span>
+                  <span className="text-white font-medium">{t('privacy.yourDevice')}</span>
                 </div>
                 <div className="flex justify-between items-center py-3 border-b border-slate-700">
-                  <span className="text-gray-400">Encryption</span>
-                  <span className="text-green-400 font-medium">Password Hashed (bcrypt)</span>
+                  <span className="text-gray-400">{t('privacy.encryption')}</span>
+                  <span className="text-green-400 font-medium">{t('privacy.passwordHashed')}</span>
                 </div>
                 <div className="flex justify-between items-center py-3">
-                  <span className="text-gray-400">External Storage</span>
-                  <span className="text-red-400 font-medium">None</span>
+                  <span className="text-gray-400">{t('privacy.externalStorage')}</span>
+                  <span className="text-red-400 font-medium">{t('privacy.none')}</span>
                 </div>
               </div>
             </div>
@@ -83,20 +85,20 @@ function Privacy() {
             <div className="bg-slate-800 rounded-xl p-6 border border-slate-700">
               <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
                 <span className="text-2xl">📡</span>
-                Network Status
+                {t('privacy.networkStatus')}
               </h3>
               <div className="space-y-3">
                 <div className="flex justify-between items-center py-3 border-b border-slate-700">
-                  <span className="text-gray-400">Internet Required</span>
-                  <span className="text-red-400 font-medium">No</span>
+                  <span className="text-gray-400">{t('privacy.internetRequired')}</span>
+                  <span className="text-red-400 font-medium">{t('privacy.no')}</span>
                 </div>
                 <div className="flex justify-between items-center py-3 border-b border-slate-700">
-                  <span className="text-gray-400">Outbound Connections</span>
-                  <span className="text-green-400 font-medium">None</span>
+                  <span className="text-gray-400">{t('privacy.outboundConnections')}</span>
+                  <span className="text-green-400 font-medium">{t('privacy.none')}</span>
                 </div>
                 <div className="flex justify-between items-center py-3">
-                  <span className="text-gray-400">Offline Mode</span>
-                  <span className="text-green-400 font-medium">Always On</span>
+                  <span className="text-gray-400">{t('privacy.offlineMode')}</span>
+                  <span className="text-green-400 font-medium">{t('privacy.alwaysOn')}</span>
                 </div>
               </div>
             </div>
@@ -105,42 +107,42 @@ function Privacy() {
             <div className="bg-slate-800 rounded-xl p-6 border border-slate-700">
               <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
                 <span className="text-2xl">✅</span>
-                Privacy Features
+                {t('privacy.privacyFeatures')}
               </h3>
               <ul className="space-y-3">
                 <li className="flex items-start gap-3 py-2">
                   <span className="text-green-400 mt-1">✓</span>
                   <div>
-                    <span className="text-white">No account registration required</span>
-                    <p className="text-gray-400 text-sm">All data stored locally on your device</p>
+                    <span className="text-white">{t('privacy.feature1Title')}</span>
+                    <p className="text-gray-400 text-sm">{t('privacy.feature1Desc')}</p>
                   </div>
                 </li>
                 <li className="flex items-start gap-3 py-2">
                   <span className="text-green-400 mt-1">✓</span>
                   <div>
-                    <span className="text-white">No telemetry or analytics</span>
-                    <p className="text-gray-400 text-sm">We don't track usage or collect metrics</p>
+                    <span className="text-white">{t('privacy.feature2Title')}</span>
+                    <p className="text-gray-400 text-sm">{t('privacy.feature2Desc')}</p>
                   </div>
                 </li>
                 <li className="flex items-start gap-3 py-2">
                   <span className="text-green-400 mt-1">✓</span>
                   <div>
-                    <span className="text-white">No cloud synchronization</span>
-                    <p className="text-gray-400 text-sm">Your memories stay on your device</p>
+                    <span className="text-white">{t('privacy.feature3Title')}</span>
+                    <p className="text-gray-400 text-sm">{t('privacy.feature3Desc')}</p>
                   </div>
                 </li>
                 <li className="flex items-start gap-3 py-2">
                   <span className="text-green-400 mt-1">✓</span>
                   <div>
-                    <span className="text-white">Open source transparency</span>
-                    <p className="text-gray-400 text-sm">Code is available for audit</p>
+                    <span className="text-white">{t('privacy.feature4Title')}</span>
+                    <p className="text-gray-400 text-sm">{t('privacy.feature4Desc')}</p>
                   </div>
                 </li>
                 <li className="flex items-start gap-3 py-2">
                   <span className="text-green-400 mt-1">✓</span>
                   <div>
-                    <span className="text-white">User-controlled data</span>
-                    <p className="text-gray-400 text-sm">You can export or delete all data anytime</p>
+                    <span className="text-white">{t('privacy.feature5Title')}</span>
+                    <p className="text-gray-400 text-sm">{t('privacy.feature5Desc')}</p>
                   </div>
                 </li>
               </ul>
@@ -151,11 +153,9 @@ function Privacy() {
               <div className="flex items-start gap-3">
                 <span className="text-2xl">🛡️</span>
                 <div>
-                  <h4 className="text-green-400 font-semibold mb-2">Security Note</h4>
+                  <h4 className="text-green-400 font-semibold mb-2">{t('privacy.securityNote')}</h4>
                   <p className="text-gray-300 text-sm">
-                    Memento AI is designed for privacy. All AI inference happens locally on your CPU. 
-                    Your documents, memories, and conversations are stored in a local SQLite database. 
-                    No data is sent to any external server. Your password is hashed using bcrypt before storage.
+                    {t('privacy.securityDesc')}
                   </p>
                 </div>
               </div>

@@ -272,8 +272,8 @@ function Navigation() {
 
 function App() {
   return (
-    <AuthProvider>
-      <Router>
+    <Router>
+      <AuthProvider>
         <Routes>
           <Route path="/" element={<Landing />} />
           <Route path="/login" element={<Login />} />
@@ -343,10 +343,10 @@ function App() {
             } 
           />
         </Routes>
-
-      </Router>
-    </AuthProvider>
+      </AuthProvider>
+    </Router>
   )
 }
+
 
 export default App

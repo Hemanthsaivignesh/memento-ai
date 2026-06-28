@@ -21,6 +21,7 @@ from system_monitor import SystemMonitor
 from cache_service import response_cache
 from async_processor import async_processor, ProcessingStatus
 from auth_service import create_user, authenticate_user, create_access_token, decode_token
+from language_service import detect_language, get_language_instruction
 from sqlalchemy.orm import Session
 from models import User
 
@@ -115,6 +116,7 @@ class UserCreate(BaseModel):
     name: str
     email: str
     password: str
+    preferred_language: str = "en"
 
 
 class UserLogin(BaseModel):
@@ -126,6 +128,7 @@ class UserResponse(BaseModel):
     id: int
     name: str
     email: str
+    preferred_language: str
     created_at: str
 
 
@@ -263,7 +266,7 @@ async def signup(user_data: UserCreate, db: Session = Depends(get_db)):
         raise HTTPException(status_code=400, detail="Email already registered")
     
     # Create new user
-    user = create_user(db, user_data.name, user_data.email, user_data.password)
+    user = create_user(db, user_data.name, user_data.email, user_data.password, user_data.preferred_language)
     
     # Generate access token
     access_token = create_access_token(data={"sub": str(user.id), "email": user.email})
@@ -275,6 +278,7 @@ async def signup(user_data: UserCreate, db: Session = Depends(get_db)):
             id=user.id,
             name=user.name,
             email=user.email,
+            preferred_language=user.preferred_language,
             created_at=user.created_at.isoformat()
         )
     )
@@ -297,6 +301,7 @@ async def login(user_data: UserLogin, db: Session = Depends(get_db)):
             id=user.id,
             name=user.name,
             email=user.email,
+            preferred_language=user.preferred_language,
             created_at=user.created_at.isoformat()
         )
     )
@@ -474,6 +479,10 @@ async def chat(request: ChatRequest, current_user: User = Depends(get_current_us
     
     async def stream_response():
         try:
+            # Detect language from user message
+            detected_language = detect_language(request.message)
+            language_instruction = get_language_instruction(detected_language)
+            
             # Retrieve relevant memories using Hybrid Search (filtered by user)
             retriever = MemoryRetriever()
             relevant_memories = retriever.retrieve_hybrid(db, request.message, top_k=3, user_id=current_user.id)
@@ -501,9 +510,11 @@ async def chat(request: ChatRequest, current_user: User = Depends(get_current_us
             
             # Generate response with or without context
             if context:
-                # Augment prompt with context and history
+                # Augment prompt with context, history, and language instruction
                 augmented_prompt = f"""You are a helpful offline personal memory assistant. Answer the user's question based on the retrieved context below.
 If the answer cannot be found in the context, use your general knowledge but mention it is not in your personal memories.
+
+{language_instruction}
 
 Retrieved Context:
 {context}
@@ -515,9 +526,11 @@ User question: {request.message}
 Answer:"""
                 stream = llm.generate_stream(augmented_prompt, max_tokens=512, temperature=0.7)
             else:
-                # No relevant memories found, use chat history prompt
+                # No relevant memories found, use chat history prompt with language instruction
                 chat_prompt = f"""You are a helpful offline personal memory assistant.
                 
+{language_instruction}
+
 Recent Conversation History:
 {history_str}
 User question: {request.message}

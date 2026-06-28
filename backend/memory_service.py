@@ -3,6 +3,7 @@ from models import Memory, Conversation
 from typing import List, Optional
 from embedding_service import EmbeddingService
 from memory_schema import MemorySchema
+from language_service import detect_language
 import json
 
 
@@ -15,6 +16,9 @@ class MemoryService:
         """Create a new memory with optional embedding."""
         embedding_service = EmbeddingService()
         embedding = None
+        
+        # Detect language from content
+        detected_language = detect_language(content)
         
         # Generate embedding if model is available
         if embedding_service.is_loaded():
@@ -30,6 +34,7 @@ class MemoryService:
             embedding=embedding,
             metadata_json=metadata,
             source_file=source_document,
+            language=detected_language,
             user_id=user_id
         )
         db.add(memory)
@@ -114,6 +119,9 @@ class MemoryService:
         embedding_service = EmbeddingService()
         embedding = None
         
+        # Detect language from summary
+        detected_language = detect_language(memory_schema.summary)
+        
         # Generate embedding if model is available
         if embedding_service.is_loaded():
             text_to_embed = f"{memory_schema.title}. {memory_schema.summary}"
@@ -140,7 +148,7 @@ class MemoryService:
             embedding=embedding,
             metadata_json=memory_schema.to_metadata_json(),
             source_file=source_doc,
-            language="en",
+            language=detected_language,
             user_id=user_id,
             importance=memory_schema.importance,
             entities_people=json.dumps(memory_schema.entities.people) if memory_schema.entities.people else None,

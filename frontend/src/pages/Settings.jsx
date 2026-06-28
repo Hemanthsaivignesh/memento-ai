@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import Sidebar from '../components/Sidebar';
 import Navbar from '../components/Navbar';
 
 function Settings() {
+  const { t } = useTranslation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [user, setUser] = useState(null);
   const [settings, setSettings] = useState({
@@ -22,16 +24,16 @@ function Settings() {
     // Simulate saving
     setTimeout(() => {
       setSaving(false);
-      alert('Settings saved successfully!');
+      alert(t('settings.saved'));
     }, 500);
   };
 
   const handleDeleteData = async () => {
-    if (!confirm('Are you sure you want to delete all your data? This action cannot be undone.')) {
+    if (!confirm(t('settings.deleteConfirm1'))) {
       return;
     }
     
-    if (!confirm('This will delete all your memories, documents, and conversations. Continue?')) {
+    if (!confirm(t('settings.deleteConfirm2'))) {
       return;
     }
 
@@ -50,7 +52,7 @@ function Settings() {
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       
       <div className="flex-1 flex flex-col lg:ml-64">
-        <Navbar onMenuClick={() => setSidebarOpen(true)} title="Settings" />
+        <Navbar onMenuClick={() => setSidebarOpen(true)} title={t('settings.title')} />
         
         <main className="flex-1 p-6 overflow-y-auto">
           <div className="max-w-4xl mx-auto space-y-8">
@@ -58,11 +60,11 @@ function Settings() {
             <div className="bg-slate-800 rounded-xl p-6 border border-slate-700">
               <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
                 <span className="text-2xl">👤</span>
-                Profile
+                {t('settings.profile')}
               </h3>
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm text-gray-400 mb-2">Name</label>
+                  <label className="block text-sm text-gray-400 mb-2">{t('settings.name')}</label>
                   <input
                     type="text"
                     value={user?.name || ''}
@@ -71,7 +73,7 @@ function Settings() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm text-gray-400 mb-2">Email</label>
+                  <label className="block text-sm text-gray-400 mb-2">{t('settings.email')}</label>
                   <input
                     type="email"
                     value={user?.email || ''}
@@ -79,7 +81,7 @@ function Settings() {
                     className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-gray-400 cursor-not-allowed"
                   />
                 </div>
-                <p className="text-xs text-gray-500">Profile information cannot be changed in this version</p>
+                <p className="text-xs text-gray-500">{t('settings.profileInfo')}</p>
               </div>
             </div>
 
@@ -87,22 +89,22 @@ function Settings() {
             <div className="bg-slate-800 rounded-xl p-6 border border-slate-700">
               <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
                 <span className="text-2xl">🎨</span>
-                Appearance
+                {t('settings.appearance')}
               </h3>
               <div className="space-y-4">
                 <div className="flex items-center justify-between py-3 border-b border-slate-700">
                   <div>
-                    <span className="text-white">Theme</span>
-                    <p className="text-sm text-gray-400">Choose your preferred color scheme</p>
+                    <span className="text-white">{t('settings.theme')}</span>
+                    <p className="text-sm text-gray-400">{t('settings.themeDesc')}</p>
                   </div>
                   <select
                     value={settings.theme}
                     onChange={(e) => setSettings({ ...settings, theme: e.target.value })}
                     className="px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
                   >
-                    <option value="dark">Dark</option>
-                    <option value="light">Light (Coming Soon)</option>
-                    <option value="system">System (Coming Soon)</option>
+                    <option value="dark">{t('settings.dark')}</option>
+                    <option value="light">{t('settings.light')}</option>
+                    <option value="system">{t('settings.system')}</option>
                   </select>
                 </div>
               </div>
@@ -112,13 +114,13 @@ function Settings() {
             <div className="bg-slate-800 rounded-xl p-6 border border-slate-700">
               <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
                 <span className="text-2xl">🔔</span>
-                Notifications
+                {t('settings.notifications')}
               </h3>
               <div className="space-y-4">
                 <div className="flex items-center justify-between py-3 border-b border-slate-700">
                   <div>
-                    <span className="text-white">Enable Notifications</span>
-                    <p className="text-sm text-gray-400">Receive notifications for important events</p>
+                    <span className="text-white">{t('settings.enableNotifications')}</span>
+                    <p className="text-sm text-gray-400">{t('settings.notificationsDesc')}</p>
                   </div>
                   <button
                     onClick={() => setSettings({ ...settings, notifications: !settings.notifications })}
@@ -138,13 +140,13 @@ function Settings() {
             <div className="bg-slate-800 rounded-xl p-6 border border-slate-700">
               <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
                 <span className="text-2xl">💾</span>
-                Data Management
+                {t('settings.dataManagement')}
               </h3>
               <div className="space-y-4">
                 <div className="flex items-center justify-between py-3 border-b border-slate-700">
                   <div>
-                    <span className="text-white">Auto-save</span>
-                    <p className="text-sm text-gray-400">Automatically save changes</p>
+                    <span className="text-white">{t('settings.autoSave')}</span>
+                    <p className="text-sm text-gray-400">{t('settings.autoSaveDesc')}</p>
                   </div>
                   <button
                     onClick={() => setSettings({ ...settings, autoSave: !settings.autoSave })}
@@ -162,10 +164,10 @@ function Settings() {
                     onClick={handleDeleteData}
                     className="px-4 py-2 bg-red-600/20 border border-red-500/30 text-red-400 rounded-lg hover:bg-red-600/30 transition"
                   >
-                    Delete All Data
+                    {t('settings.deleteAllData')}
                   </button>
                   <p className="text-xs text-gray-500 mt-2">
-                    This will permanently delete all your memories, documents, and conversations
+                    {t('settings.deleteWarning')}
                   </p>
                 </div>
               </div>
@@ -175,19 +177,19 @@ function Settings() {
             <div className="bg-slate-800 rounded-xl p-6 border border-slate-700">
               <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
                 <span className="text-2xl">ℹ️</span>
-                About
+                {t('settings.about')}
               </h3>
               <div className="space-y-3">
                 <div className="flex justify-between py-2 border-b border-slate-700">
-                  <span className="text-gray-400">Version</span>
+                  <span className="text-gray-400">{t('settings.version')}</span>
                   <span className="text-white">1.0.0</span>
                 </div>
                 <div className="flex justify-between py-2 border-b border-slate-700">
-                  <span className="text-gray-400">AI Model</span>
+                  <span className="text-gray-400">{t('settings.aiModel')}</span>
                   <span className="text-white">Local LLM</span>
                 </div>
                 <div className="flex justify-between py-2">
-                  <span className="text-gray-400">License</span>
+                  <span className="text-gray-400">{t('settings.license')}</span>
                   <span className="text-white">MIT</span>
                 </div>
               </div>
@@ -200,7 +202,7 @@ function Settings() {
                 disabled={saving}
                 className="px-6 py-3 bg-purple-600 text-white font-medium rounded-lg hover:bg-purple-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {saving ? 'Saving...' : 'Save Settings'}
+                {saving ? t('settings.saving') : t('settings.saveSettings')}
               </button>
             </div>
           </div>

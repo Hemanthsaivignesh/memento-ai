@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 
 function Signup() {
+  const { t } = useTranslation();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -15,12 +17,12 @@ function Signup() {
     setError('');
 
     if (password !== confirmPassword) {
-      setError('Passwords do not match');
+      setError(t('auth.passwordMismatch'));
       return;
     }
 
     if (password.length < 6) {
-      setError('Password must be at least 6 characters');
+      setError(t('auth.passwordTooShort'));
       return;
     }
 
@@ -42,10 +44,10 @@ function Signup() {
         localStorage.setItem('user', JSON.stringify(data.user));
         navigate('/dashboard');
       } else {
-        setError(data.detail || 'Signup failed');
+        setError(data.detail || t('auth.signupFailed'));
       }
     } catch (err) {
-      setError('Failed to connect to server');
+      setError(t('auth.connectionError'));
     } finally {
       setLoading(false);
     }
@@ -57,7 +59,7 @@ function Signup() {
         {/* Logo/Brand */}
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold text-white mb-2">Memento AI</h1>
-          <p className="text-gray-400">Create your account</p>
+          <p className="text-gray-400">{t('auth.signupTitle')}</p>
         </div>
 
         {/* Signup Card */}
@@ -71,7 +73,7 @@ function Signup() {
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label htmlFor="name" className="block text-sm font-medium text-gray-300 mb-2">
-                Name
+                {t('auth.name')}
               </label>
               <input
                 id="name"
@@ -80,13 +82,13 @@ function Signup() {
                 onChange={(e) => setName(e.target.value)}
                 required
                 className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
-                placeholder="John Doe"
+                placeholder={t('auth.namePlaceholder')}
               />
             </div>
 
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-2">
-                Email
+                {t('auth.email')}
               </label>
               <input
                 id="email"
@@ -95,13 +97,13 @@ function Signup() {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
-                placeholder="you@example.com"
+                placeholder={t('auth.emailPlaceholder')}
               />
             </div>
 
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-2">
-                Password
+                {t('auth.password')}
               </label>
               <input
                 id="password"
@@ -111,13 +113,13 @@ function Signup() {
                 required
                 minLength={6}
                 className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
-                placeholder="••••••••"
+                placeholder={t('auth.passwordPlaceholder')}
               />
             </div>
 
             <div>
               <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-300 mb-2">
-                Confirm Password
+                {t('auth.confirmPassword')}
               </label>
               <input
                 id="confirmPassword"
@@ -127,7 +129,7 @@ function Signup() {
                 required
                 minLength={6}
                 className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
-                placeholder="••••••••"
+                placeholder={t('auth.passwordPlaceholder')}
               />
             </div>
 
@@ -136,15 +138,15 @@ function Signup() {
               disabled={loading}
               className="w-full py-3 bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-slate-900 transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? 'Creating account...' : 'Sign Up'}
+              {loading ? t('auth.creatingAccount') : t('auth.signup')}
             </button>
           </form>
 
           <div className="mt-6 text-center">
             <p className="text-gray-400">
-              Already have an account?{' '}
+              {t('auth.hasAccount')}{' '}
               <Link to="/login" className="text-purple-400 hover:text-purple-300 font-medium transition">
-                Sign in
+                {t('auth.signInLink')}
               </Link>
             </p>
           </div>
@@ -153,7 +155,7 @@ function Signup() {
         {/* Back to Home */}
         <div className="mt-6 text-center">
           <Link to="/" className="text-gray-400 hover:text-white transition">
-            ← Back to home
+            {t('common.back')}
           </Link>
         </div>
       </div>

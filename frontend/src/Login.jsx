@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 
 function Login() {
+  const { t } = useTranslation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -29,10 +31,10 @@ function Login() {
         localStorage.setItem('user', JSON.stringify(data.user));
         navigate('/dashboard');
       } else {
-        setError(data.detail || 'Login failed');
+        setError(data.detail || t('auth.loginFailed'));
       }
     } catch (err) {
-      setError('Failed to connect to server');
+      setError(t('auth.connectionError'));
     } finally {
       setLoading(false);
     }
@@ -44,7 +46,7 @@ function Login() {
         {/* Logo/Brand */}
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold text-white mb-2">Memento AI</h1>
-          <p className="text-gray-400">Sign in to your account</p>
+          <p className="text-gray-400">{t('auth.loginTitle')}</p>
         </div>
 
         {/* Login Card */}
@@ -58,7 +60,7 @@ function Login() {
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-2">
-                Email
+                {t('auth.email')}
               </label>
               <input
                 id="email"
@@ -67,13 +69,13 @@ function Login() {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
-                placeholder="you@example.com"
+                placeholder={t('auth.emailPlaceholder')}
               />
             </div>
 
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-2">
-                Password
+                {t('auth.password')}
               </label>
               <input
                 id="password"
@@ -82,7 +84,7 @@ function Login() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
-                placeholder="••••••••"
+                placeholder={t('auth.passwordPlaceholder')}
               />
             </div>
 
@@ -91,15 +93,15 @@ function Login() {
               disabled={loading}
               className="w-full py-3 bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-slate-900 transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? 'Signing in...' : 'Sign In'}
+              {loading ? t('auth.signingIn') : t('auth.login')}
             </button>
           </form>
 
           <div className="mt-6 text-center">
             <p className="text-gray-400">
-              Don't have an account?{' '}
+              {t('auth.noAccount')}{' '}
               <Link to="/signup" className="text-purple-400 hover:text-purple-300 font-medium transition">
-                Sign up
+                {t('auth.signUpLink')}
               </Link>
             </p>
           </div>
@@ -108,7 +110,7 @@ function Login() {
         {/* Back to Home */}
         <div className="mt-6 text-center">
           <Link to="/" className="text-gray-400 hover:text-white transition">
-            ← Back to home
+            {t('common.back')}
           </Link>
         </div>
       </div>
