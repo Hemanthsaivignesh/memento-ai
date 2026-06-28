@@ -142,6 +142,15 @@ class ChatResponse(BaseModel):
     sources: List[SourceCitation] = []
 
 
+class DocumentResponse(BaseModel):
+    id: int
+    filename: str
+    file_size: int
+    upload_date: str
+    status: str
+    memories_count: int
+
+
 class UserCreate(BaseModel):
     name: str
     email: str
@@ -908,6 +917,76 @@ async def delete_conversation_endpoint(conversation_id: int, db: Session = Depen
     if not ConversationService.delete_conversation(db, conversation_id):
         raise HTTPException(status_code=404, detail="Conversation not found")
     return {"message": "Conversation deleted successfully"}
+
+
+# Documents endpoint
+@app.get("/documents", response_model=List[DocumentResponse])
+async def get_documents(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Get all documents (memories with source_file) for the current user."""
+    memories = db.query(Memory).filter(
+        Memory.user_id == current_user.id,
+        Memory.source_file.isnot(None)
+    ).order_by(Memory.created_at.desc()).all()
+    
+    # Group by source_file to get unique documents
+    documents_dict = {}
+    for memory in memories:
+        if memory.source_file not in documents_dict:
+            documents_dict[memory.source_file] = {
+                'filename': memory.source_file,
+                'file_size': len(memory.content) if memory.content else 0,
+                'upload_date': memory.created_at.isoformat(),
+                'status': 'completed',
+                'memories_count': 0
+            }
+        documents_dict[memory.source_file]['memories_count'] += 1
+    
+    # Convert to list with IDs
+    documents = []
+    for idx, (filename, doc_data) in enumerate(documents_dict.items(), 1):
+        documents.append(DocumentResponse(
+            id=idx,
+            filename=doc_data['filename'],
+            file_size=doc_data['file_size'],
+            upload_date=doc_data['upload_date'],
+            status=doc_data['status'],
+            memories_count=doc_data['memories_count']
+        ))
+    
+    return documents
+
+
+@app.delete("/documents/{document_id}")
+async def delete_document_endpoint(document_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Delete a document and all its associated memories."""
+    # Get all memories with this source_file
+    documents = db.query(Memory).filter(
+        Memory.user_id == current_user.id,
+        Memory.source_file.isnot(None)
+    ).all()
+    
+    # Group by source_file to find the document
+    documents_dict = {}
+    for memory in documents:
+        if memory.source_file not in documents_dict:
+            documents_dict[memory.source_file] = []
+        documents_dict[memory.source_file].append(memory)
+    
+    # Get the document by index
+    document_list = list(documents_dict.keys())
+    if document_id < 1 or document_id > len(document_list):
+        raise HTTPException(status_code=404, detail="Document not found")
+    
+    filename = document_list[document_id - 1]
+    
+    # Delete all memories with this source_file
+    db.query(Memory).filter(
+        Memory.user_id == current_user.id,
+        Memory.source_file == filename
+    ).delete()
+    
+    db.commit()
+    return {"message": "Document deleted successfully"}
 
 
 # Async document upload endpoint
