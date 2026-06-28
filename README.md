@@ -1,93 +1,547 @@
-# memento-ai
+# 🧠 Memento AI — Offline Personal Memory Engine
 
+> **Build AI that runs anywhere.**
+>
+> A CPU-first, offline AI system that transforms unstructured human data into structured, searchable knowledge using local AI models.
 
+---
 
-## Getting started
+## 🚀 Overview
 
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
+Most modern AI assistants depend on cloud servers, expensive GPUs, and continuous internet connectivity.
 
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
+This creates problems:
 
-## Add your files
+* Privacy risks for sensitive documents
+* Dependency on cloud infrastructure
+* No access during network failures
+* Expensive AI computation
 
-* [Create](https://docs.gitlab.com/user/project/repository/web_editor/#create-a-file) or [upload](https://docs.gitlab.com/user/project/repository/web_editor/#upload-a-file) files
-* [Add files using the command line](https://docs.gitlab.com/topics/git/add_files/#add-files-to-a-git-repository) or push an existing Git repository with the following command:
+**Memento AI** solves this by bringing AI directly to the user's device.
+
+It is an **offline-first personal intelligence engine** that converts:
+
+* 📄 Documents
+* 🖼 Images
+* 🎙 Audio
+* 📝 Text
+
+into structured memories that can be searched and queried locally.
+
+The entire AI pipeline runs on the user's machine using CPU-optimized models.
+
+---
+
+# 🎯 Problem Statement
+
+Human knowledge is scattered across:
+
+* Resumes
+* Notes
+* Reports
+* Meeting records
+* Personal documents
+* Voice recordings
+
+Traditional file storage only stores information.
+
+Memento AI creates an intelligent memory layer that understands, organizes, and retrieves this information privately.
+
+---
+
+# 💡 Solution
+
+Memento AI provides:
+
+✅ Offline AI assistant
+✅ Local document understanding
+✅ Structured memory extraction
+✅ Private knowledge storage
+✅ Natural language querying
+✅ CPU-first inference
+
+The system converts unstructured input into structured data.
+
+Example:
+
+### Input
 
 ```
-cd existing_repo
-git remote add origin https://code.swecha.org/sridhar24/memento-ai.git
-git branch -M main
-git push -uf origin main
+resume.pdf
 ```
 
-## Integrate with your tools
+### AI Processing
 
-* [Set up project integrations](https://code.swecha.org/sridhar24/memento-ai/-/settings/integrations)
+```
+Document
+    |
+Text Extraction
+    |
+Entity Understanding
+    |
+Memory Creation
+```
 
-## Collaborate with your team
+### Structured Output
 
-* [Invite team members and collaborators](https://docs.gitlab.com/user/project/members/)
-* [Create a new merge request](https://docs.gitlab.com/user/project/merge_requests/creating_merge_requests/)
-* [Automatically close issues from merge requests](https://docs.gitlab.com/user/project/issues/managing_issues/#closing-issues-automatically)
-* [Enable merge request approvals](https://docs.gitlab.com/user/project/merge_requests/approvals/)
-* [Set auto-merge](https://docs.gitlab.com/user/project/merge_requests/auto_merge/)
+```json
+{
+  "type": "experience",
+  "title": "Machine Learning Internship",
+  "organization": "ABC Technologies",
+  "skills": [
+    "Python",
+    "Machine Learning"
+  ],
+  "year": "2025",
+  "source": "resume.pdf"
+}
+```
 
-## Test and Deploy
+---
 
-Use the built-in continuous integration in GitLab.
+# 🏗️ Architecture
 
-* [Get started with GitLab CI/CD](https://docs.gitlab.com/ci/quick_start/)
-* [Analyze your code for known vulnerabilities with Static Application Security Testing (SAST)](https://docs.gitlab.com/user/application_security/sast/)
-* [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/topics/autodevops/requirements/)
-* [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/user/clusters/agent/)
-* [Set up protected environments](https://docs.gitlab.com/ci/environments/protected_environments/)
+```
+                 User
 
-***
+                  |
+                  v
 
-# Editing this README
+          Web Application
 
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thanks to [makeareadme.com](https://www.makeareadme.com/) for this template.
+                  |
+                  v
 
-## Suggestions for a good README
+              FastAPI
 
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
+                  |
+        --------------------
 
-## Name
-Choose a self-explaining name for your project.
+        |                  |
 
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
+ Document Processing   AI Engine
 
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
 
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
+        |                  |
 
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
+ PDF/Image/Audio     llama.cpp
 
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
 
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
+        |                  |
 
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
+        -----------
 
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
 
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
+          Memory Engine
 
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
+                |
 
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
+                v
 
-## License
-For open source projects, say how it is licensed.
+            SQLite Database
 
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+                |
+
+                v
+
+          Local AI Retrieval
+
+```
+
+---
+
+# ⚙️ Technology Stack
+
+## Frontend
+
+* React
+* Vite
+* Tailwind CSS
+
+## Backend
+
+* FastAPI
+* Python
+* SQLAlchemy
+
+## AI Runtime
+
+### Language Model
+
+```
+llama.cpp
+```
+
+Model:
+
+```
+GGUF Quantized Local LLM
+```
+
+Example:
+
+```
+Qwen2.5-3B-Instruct-GGUF
+```
+
+## Document Processing
+
+| Input  | Technology        |
+| ------ | ----------------- |
+| PDF    | PyMuPDF           |
+| Images | Tesseract OCR     |
+| Audio  | Whisper.cpp       |
+| Text   | Native processing |
+
+## Storage
+
+```
+SQLite
+```
+
+All data remains on the local device.
+
+---
+
+# 🔒 Offline-First Design
+
+Memento AI works without internet.
+
+During operation:
+
+```
+Internet:
+OFF
+
+Cloud API Calls:
+0
+
+External Requests:
+0
+
+AI Inference:
+Local
+
+Storage:
+Local SQLite
+```
+
+No dependency on:
+
+❌ OpenAI API
+❌ Anthropic API
+❌ Cloud databases
+❌ External AI services
+
+---
+
+# ⚡ CPU-First AI
+
+Memento AI is designed for normal laptops.
+
+Supported runtime:
+
+```
+llama.cpp
+```
+
+Advantages:
+
+* GGUF quantized models
+* Low memory usage
+* CPU optimized inference
+* No CUDA dependency
+
+Target hardware:
+
+```
+Intel / AMD CPU laptops
+8GB+ RAM
+```
+
+---
+
+# 🧠 Core Features
+
+## 1. Multi-Modal Data Ingestion
+
+Supported:
+
+* PDF documents
+* Images
+* Text files
+* Audio recordings
+
+---
+
+## 2. Structured Memory Extraction
+
+Transforms raw information into meaningful objects:
+
+Examples:
+
+* People
+* Organizations
+* Projects
+* Skills
+* Experiences
+* Events
+
+---
+
+## 3. Local AI Chat
+
+Users can ask:
+
+```
+What projects did I build?
+```
+
+Memento AI retrieves relevant memories and generates answers locally.
+
+---
+
+## 4. Source Attribution
+
+Every response can reference the original data source.
+
+Example:
+
+```
+You worked as an AI Intern at ABC Technologies.
+
+Sources:
+- resume.pdf
+- internship_report.pdf
+```
+
+---
+
+## 5. Private Knowledge Storage
+
+All memories are stored locally.
+
+Database:
+
+```
+SQLite
+```
+
+No user data leaves the machine.
+
+---
+
+# 📂 Project Structure
+
+```
+memento-ai/
+
+├── backend/
+│   ├── app/
+│   ├── services/
+│   ├── models/
+│   └── database/
+
+├── frontend/
+│   ├── src/
+│   └── components/
+
+├── models/
+│
+├── docs/
+│
+├── tests/
+│
+├── README.md
+├── LICENSE
+└── .gitlab-ci.yml
+
+```
+
+---
+
+# 🛠️ Installation
+
+## Requirements
+
+* Python 3.10+
+* Node.js 18+
+* CPU-based laptop
+
+---
+
+## Backend Setup
+
+Clone repository:
+
+```bash
+git clone <repository-url>
+
+cd memento-ai/backend
+```
+
+Create environment:
+
+```bash
+python -m venv venv
+```
+
+Activate:
+
+Windows:
+
+```bash
+venv\Scripts\activate
+```
+
+Install dependencies:
+
+```bash
+pip install -r requirements.txt
+```
+
+Run:
+
+```bash
+uvicorn app.main:app --reload
+```
+
+---
+
+## Frontend Setup
+
+```bash
+cd frontend
+
+npm install
+
+npm run dev
+```
+
+---
+
+# 🧪 Offline Demo
+
+1. Disable Wi-Fi
+
+2. Start Memento AI
+
+3. Upload:
+
+```
+resume.pdf
+project_report.pdf
+notes.txt
+```
+
+4. AI processes locally:
+
+```
+Extracting text
+       |
+Understanding content
+       |
+Creating memories
+       |
+Saving locally
+```
+
+5. Ask:
+
+```
+What skills do I have?
+```
+
+Receive locally generated answer.
+
+---
+
+# 📊 Performance Goals
+
+The system is optimized for:
+
+| Metric        | Target        |
+| ------------- | ------------- |
+| Inference     | CPU only      |
+| Memory        | Low footprint |
+| Storage       | Local         |
+| Network usage | 0 bytes       |
+| AI Runtime    | llama.cpp     |
+
+---
+
+# 🌍 Multilingual Support
+
+Planned support:
+
+* English
+* Telugu
+* Hindi
+
+All language processing will remain offline.
+
+---
+
+# 🔐 Privacy
+
+Memento AI follows a local-first philosophy.
+
+Your:
+
+* Documents
+* Memories
+* Conversations
+
+remain on your machine.
+
+---
+
+# 🤝 Contribution
+
+Contributions are welcome.
+
+Please read:
+
+```
+CONTRIBUTING.md
+```
+
+before submitting changes.
+
+---
+
+# 📜 License
+
+This project is licensed under:
+
+```
+GNU Affero General Public License v3.0
+```
+
+A strong copyleft open-source license.
+
+---
+
+# 🏆 Hackathon Alignment
+
+Memento AI satisfies:
+
+✅ CPU-first inference
+✅ Offline-first operation
+✅ Local AI models
+✅ Structured data extraction
+✅ Multi-modal processing
+✅ Open-source licensing
+
+---
+
+# 👨‍💻 Team
+
+Built for:
+
+**The CPU-First Hackathon**
+
+Theme:
+
+> Build AI that runs anywhere.
