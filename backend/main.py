@@ -25,6 +25,7 @@ from cache_service import response_cache
 from async_processor import async_processor, ProcessingStatus
 from auth_service import create_user, authenticate_user, create_access_token, decode_token
 from language_service import detect_language, get_language_instruction
+from retry_utils import retry_with_logging
 from prompt_sanitizer import PromptSanitizer
 from sqlalchemy.orm import Session
 from models import User
@@ -599,7 +600,26 @@ Recent Conversation History:
 User question: {sanitized_message}
 
 Answer:"""
-                stream = llm.generate_stream(augmented_prompt, max_tokens=512, temperature=0.7)
+                
+                # Check cache first for repeated queries
+                cached_response = response_cache.get(augmented_prompt, max_tokens=512, temperature=0.7)
+                if cached_response:
+                    # Stream cached response
+                    for token in cached_response:
+                        yield f"data: {json.dumps({'token': token})}\n\n"
+                    
+                    # Send sources and metrics (cached)
+                    sources_data = [s.dict() for s in sources]
+                    yield f"data: {json.dumps({'sources': sources_data, 'cached': True, 'done': True})}\n\n"
+                    ConversationService.create_conversation(db, request.message, cached_response, current_user.id)
+                    return
+                
+                # Use retry logic for LLM generation (CPU inference can be slow)
+                @retry_with_logging(max_retries=2, initial_delay=0.5, backoff_factor=2.0, operation_name="LLM generation")
+                def generate_with_retry(prompt):
+                    return llm.generate_stream(prompt, max_tokens=512, temperature=0.7)
+                
+                stream = generate_with_retry(augmented_prompt)
             else:
                 # No relevant memories found, use chat history prompt with language instruction
                 chat_prompt = f"""You are a helpful offline personal memory assistant.
@@ -611,13 +631,37 @@ Recent Conversation History:
 User question: {sanitized_message}
 
 Answer:"""
-                stream = llm.generate_stream(chat_prompt, max_tokens=512, temperature=0.7)
+                
+                # Check cache first for repeated queries
+                cached_response = response_cache.get(chat_prompt, max_tokens=512, temperature=0.7)
+                if cached_response:
+                    # Stream cached response
+                    for token in cached_response:
+                        yield f"data: {json.dumps({'token': token})}\n\n"
+                    
+                    # Send sources and metrics (cached)
+                    yield f"data: {json.dumps({'sources': [], 'cached': True, 'done': True})}\n\n"
+                    ConversationService.create_conversation(db, request.message, cached_response, current_user.id)
+                    return
+                
+                # Use retry logic for LLM generation (CPU inference can be slow)
+                @retry_with_logging(max_retries=2, initial_delay=0.5, backoff_factor=2.0, operation_name="LLM generation")
+                def generate_with_retry(prompt):
+                    return llm.generate_stream(prompt, max_tokens=512, temperature=0.7)
+                
+                stream = generate_with_retry(chat_prompt)
             
             # Stream tokens
             full_response = ""
             for token in stream:
                 full_response += token
                 yield f"data: {json.dumps({'token': token})}\n\n"
+            
+            # Cache the response for future use
+            if context:
+                response_cache.set(augmented_prompt, full_response, max_tokens=512, temperature=0.7)
+            else:
+                response_cache.set(chat_prompt, full_response, max_tokens=512, temperature=0.7)
             
             # Prepare performance metrics
             metrics = {
@@ -629,7 +673,7 @@ Answer:"""
             
             # Send sources and metrics at the end
             sources_data = [s.dict() for s in sources]
-            yield f"data: {json.dumps({'sources': sources_data, 'metrics': metrics, 'done': True})}\n\n"
+            yield f"data: {json.dumps({'sources': sources_data, 'metrics': metrics, 'cached': False, 'done': True})}\n\n"
             
             # Save conversation to database
             ConversationService.create_conversation(db, request.message, full_response, current_user.id)
@@ -735,22 +779,55 @@ async def delete_conversation_endpoint(conversation_id: int, db: Session = Depen
 async def upload_document_async(file: UploadFile = File(...)):
     """Upload document for async background processing."""
     
+    # File size limit: 50MB
+    MAX_FILE_SIZE = 50 * 1024 * 1024  # 50MB in bytes
+    
     # Get file extension
     file_extension = file.filename.split('.')[-1].lower() if '.' in file.filename else ''
     
     # Validate file type
     supported_types = ['pdf', 'txt', 'png', 'jpg', 'jpeg', 'gif', 'bmp', 'tiff', 'wav', 'mp3']
     if file_extension not in supported_types:
-        raise HTTPException(status_code=400, detail=f"Unsupported file type. Supported types: {', '.join(supported_types)}")
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Unsupported file type: '{file_extension}'. Supported types: {', '.join(supported_types)}"
+        )
+    
+    # Check file size
+    content = await file.read()
+    file_size = len(content)
+    
+    if file_size > MAX_FILE_SIZE:
+        raise HTTPException(
+            status_code=413,
+            detail=f"File too large. Maximum size is 50MB. Your file is {file_size / (1024 * 1024):.2f}MB"
+        )
+    
+    if file_size == 0:
+        raise HTTPException(
+            status_code=400,
+            detail="File is empty. Please upload a valid file."
+        )
     
     # Save uploaded file to temporary location
     with tempfile.NamedTemporaryFile(delete=False, suffix=f".{file_extension}") as temp_file:
-        content = await file.read()
         temp_file.write(content)
         temp_file_path = temp_file.name
     
     # Submit to async processor
-    task_id = await async_processor.submit_task(temp_file_path, file.filename, file_extension)
+    try:
+        task_id = await async_processor.submit_task(temp_file_path, file.filename, file_extension)
+    except Exception as e:
+        # Clean up temp file if submission fails
+        import os
+        try:
+            os.unlink(temp_file_path)
+        except:
+            pass
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to submit document for processing: {str(e)}"
+        )
     
     return AsyncUploadResponse(
         message="Document submitted for processing",
@@ -787,32 +864,70 @@ async def upload_document(
                   "or place a GGUF model in the models/ directory and update MODEL_PATH in .env"
         )
     
+    # File size limit: 25MB for sync processing
+    MAX_FILE_SIZE = 25 * 1024 * 1024  # 25MB in bytes
+    
     # Get file extension
     file_extension = file.filename.split('.')[-1].lower() if '.' in file.filename else ''
     
     # Validate file type
     supported_types = ['pdf', 'txt', 'png', 'jpg', 'jpeg', 'gif', 'bmp', 'tiff', 'wav', 'mp3']
     if file_extension not in supported_types:
-        raise HTTPException(status_code=400, detail=f"Unsupported file type. Supported types: {', '.join(supported_types)}")
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Unsupported file type: '{file_extension}'. Supported types: {', '.join(supported_types)}"
+        )
+    
+    # Check file size
+    content = await file.read()
+    file_size = len(content)
+    
+    if file_size > MAX_FILE_SIZE:
+        raise HTTPException(
+            status_code=413,
+            detail=f"File too large for sync processing. Maximum size is 25MB. Your file is {file_size / (1024 * 1024):.2f}MB. "
+                   f"Please use the async upload endpoint for larger files."
+        )
+    
+    if file_size == 0:
+        raise HTTPException(
+            status_code=400,
+            detail="File is empty. Please upload a valid file."
+        )
     
     # Save uploaded file to temporary location
     temp_file = None
+    temp_file_path = None
     try:
         with tempfile.NamedTemporaryFile(delete=False, suffix=f".{file_extension}") as temp_file:
-            content = await file.read()
             temp_file.write(content)
             temp_file_path = temp_file.name
         
         # Extract text from document
         extractor = DocumentExtractor()
-        text = extractor.extract_text(temp_file_path, file_extension, audio_processor)
+        try:
+            text = extractor.extract_text(temp_file_path, file_extension, audio_processor)
+        except Exception as e:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Failed to extract text from document: {str(e)}. The file may be corrupted or in an unsupported format."
+            )
         
         if not text:
-            raise HTTPException(status_code=400, detail="No text could be extracted from the document")
+            raise HTTPException(
+                status_code=400, 
+                detail="No text could be extracted from the document. The file may be empty, corrupted, or contain no readable text."
+            )
         
         # Extract memories using local LLM with structured extraction
         memory_extractor = MemoryExtractor(llm)
-        extracted_memories = memory_extractor.extract_memories(text, source_document=file.filename, max_memories=5)
+        try:
+            extracted_memories = memory_extractor.extract_memories(text, source_document=file.filename, max_memories=5)
+        except Exception as e:
+            raise HTTPException(
+                status_code=500,
+                detail=f"AI processing failed: {str(e)}. This may be due to slow CPU inference. Please try again or use async processing."
+            )
         
         # Store memories in database using structured extraction
         created_memories = []
@@ -838,14 +953,18 @@ async def upload_document(
             memories=created_memories
         )
     
+    except HTTPException:
+        # Re-raise HTTP exceptions as-is
+        raise
+    
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error processing document: {str(e)}")
     
     finally:
         # Clean up temporary file
-        if temp_file and os.path.exists(temp_file.name):
+        if temp_file_path and os.path.exists(temp_file_path):
             try:
-                os.unlink(temp_file.name)
+                os.unlink(temp_file_path)
             except:
                 pass
 
