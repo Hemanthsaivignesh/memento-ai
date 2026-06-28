@@ -631,22 +631,50 @@ async def get_timeline(current_user: User = Depends(get_current_user), db: Sessi
 @app.post("/chat")
 @limiter.limit("20/minute")
 async def chat(request: Request, chat_request: ChatRequest, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    if llm is None:
-        async def error_stream():
-            error_msg = "AI model not loaded. Please download models using 'python setup_models.py' "
-            error_msg += "or place a GGUF model in the models/ directory and update MODEL_PATH in .env"
-            yield f"data: {json.dumps({'error': error_msg})}\n\n"
-        return StreamingResponse(error_stream(), media_type="text/event-stream")
-    
     async def stream_response():
         try:
             # Sanitize user input to prevent prompt injection
-            sanitized_message = PromptSanitizer.sanitize_input(request.message)
+            sanitized_message = PromptSanitizer.sanitize_input(chat_request.message)
             
             # Check for injection attempts
-            is_injection, pattern = PromptSanitizer.detect_injection_attempt(request.message)
+            is_injection, pattern = PromptSanitizer.detect_injection_attempt(chat_request.message)
             if is_injection:
                 yield f"data: {json.dumps({'error': 'Invalid input detected. Please rephrase your message.'})}\n\n"
+                return
+            
+            if llm is None:
+                # Fallback: Retrieve memories and provide simple response without LLM
+                retriever = MemoryRetriever()
+                relevant_memories = retriever.retrieve_hybrid(db, sanitized_message, top_k=5, user_id=current_user.id)
+                
+                if relevant_memories:
+                    # Build a simple response from retrieved memories
+                    response_text = "I found these memories that might be relevant:\n\n"
+                    for memory, score in relevant_memories:
+                        response_text += f"- {memory.title}: {memory.content[:200]}...\n"
+                    response_text += "\nNote: For intelligent responses, please download the AI model by running 'python setup_models.py' in the backend directory."
+                    
+                    # Build sources
+                    sources = []
+                    for memory, score in relevant_memories:
+                        citation = SourceCitation(
+                            document=memory.source_file,
+                            memory=memory.title,
+                            relevance_score=score
+                        )
+                        sources.append(citation)
+                    
+                    # Stream the response
+                    for char in response_text:
+                        yield f"data: {json.dumps({'token': char})}\n\n"
+                    yield f"data: {json.dumps({'sources': [s.dict() for s in sources]})}\n\n"
+                    yield f"data: {json.dumps({'done': True})}\n\n"
+                else:
+                    # No memories found
+                    response_text = "I don't have any memories that match your query. Please upload some documents first. For intelligent responses, please download the AI model by running 'python setup_models.py' in the backend directory."
+                    for char in response_text:
+                        yield f"data: {json.dumps({'token': char})}\n\n"
+                    yield f"data: {json.dumps({'done': True})}\n\n"
                 return
             
             # Detect language from user message
@@ -967,13 +995,6 @@ async def upload_document(
 ):
     """Upload and process a document to extract memories."""
     
-    if llm is None:
-        raise HTTPException(
-            status_code=500, 
-            detail="AI model not loaded. Please download models using 'python setup_models.py' "
-                  "or place a GGUF model in the models/ directory and update MODEL_PATH in .env"
-        )
-    
     # File size limit: 25MB for sync processing
     MAX_FILE_SIZE = 25 * 1024 * 1024  # 25MB in bytes
     
@@ -1030,31 +1051,41 @@ async def upload_document(
             )
         
         # Extract memories using local LLM with structured extraction
-        memory_extractor = MemoryExtractor(llm)
-        try:
-            extracted_memories = memory_extractor.extract_memories(text, source_document=file.filename, max_memories=5)
-        except Exception as e:
-            raise HTTPException(
-                status_code=500,
-                detail=f"AI processing failed: {str(e)}. This may be due to slow CPU inference. Please try again or use async processing."
-            )
-        
-        # Store memories in database using structured extraction
         created_memories = []
-        for memory_data in extracted_memories:
-            # Use structured memory if available
-            if 'structured_data' in memory_data and memory_data['structured_data']:
-                memory = MemoryService.create_structured_memory(db, memory_data['structured_data'], current_user.id)
-            else:
-                # Fallback to legacy format
-                memory = MemoryService.create_memory(
-                    db,
-                    title=memory_data['title'],
-                    content=memory_data['content'],
-                    tags=memory_data['tags'],
-                    source_document=memory_data.get('source_document'),
-                    user_id=current_user.id
-                )
+        if llm is not None:
+            memory_extractor = MemoryExtractor(llm)
+            try:
+                extracted_memories = memory_extractor.extract_memories(text, source_document=file.filename, max_memories=5)
+                
+                # Store memories in database using structured extraction
+                for memory_data in extracted_memories:
+                    # Use structured memory if available
+                    if 'structured_data' in memory_data and memory_data['structured_data']:
+                        memory = MemoryService.create_structured_memory(db, memory_data['structured_data'], current_user.id)
+                    else:
+                        # Fallback to legacy format
+                        memory = MemoryService.create_memory(
+                            db,
+                            title=memory_data['title'],
+                            content=memory_data['content'],
+                            tags=memory_data['tags'],
+                            source_document=memory_data.get('source_document'),
+                            user_id=current_user.id
+                        )
+                    created_memories.append(memory)
+            except Exception as e:
+                # If memory extraction fails, still save the document but log the error
+                print(f"Memory extraction failed: {str(e)}")
+        else:
+            # Create a simple memory from the extracted text when LLM is not available
+            memory = MemoryService.create_memory(
+                db,
+                title=f"Document: {file.filename}",
+                content=text[:1000],  # Store first 1000 chars as content
+                tags="document,uploaded",
+                source_document=file.filename,
+                user_id=current_user.id
+            )
             created_memories.append(memory)
         
         return DocumentUploadResponse(

@@ -11,8 +11,8 @@ function Sidebar({ isOpen, onClose }) {
     { path: '/dashboard/documents', icon: '📄', label: t('navigation.documents') },
     { path: '/dashboard/memories', icon: '🧠', label: t('navigation.memories') },
     { path: '/dashboard/timeline', icon: '📅', label: t('navigation.timeline') },
-    { path: '/dashboard/status', icon: '🖥️', label: 'System Status' },
-    { path: '/dashboard/performance', icon: '⚡', label: 'Performance' },
+    { path: '/dashboard/status', icon: '🖥️', label: t('navigation.systemStatus') },
+    { path: '/dashboard/performance', icon: '⚡', label: t('navigation.performance') },
     { path: '/dashboard/privacy', icon: '🔒', label: t('navigation.privacy') },
     { path: '/dashboard/settings', icon: '⚙️', label: t('navigation.settings') },
   ];
