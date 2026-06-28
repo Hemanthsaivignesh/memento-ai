@@ -12,5 +12,9 @@ export default defineConfig({
         rewrite: (path) => path.replace(/^\/api/, '')
       }
     }
+  },
+  build: {
+    // Ensure service worker is copied to dist
+    assetsInclude: ['**/*.json', '**/*.js']
   }
 })
