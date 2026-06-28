@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from './AuthContext';
+import BackgroundLayout from './components/BackgroundLayout';
+import { backgroundImages } from './constants/backgrounds';
 
 function Login() {
   const { t } = useTranslation();
@@ -45,8 +47,9 @@ function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center px-4">
-      <div className="max-w-md w-full">
+    <BackgroundLayout image={backgroundImages.login}>
+      <div className="min-h-screen flex items-center justify-center px-4">
+        <div className="max-w-md w-full">
         {/* Logo/Brand */}
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold text-white mb-2">Memento AI</h1>
@@ -117,8 +120,9 @@ function Login() {
             {t('common.back')}
           </Link>
         </div>
+        </div>
       </div>
-    </div>
+    </BackgroundLayout>
   );
 }
 

@@ -1,10 +1,13 @@
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import BackgroundLayout from './components/BackgroundLayout';
+import { backgroundImages } from './constants/backgrounds';
 
 function Landing() {
   const { t } = useTranslation();
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+    <BackgroundLayout image={backgroundImages.landing}>
+      <div className="min-h-screen flex flex-col">
       {/* Navigation */}
       <nav className="flex items-center justify-between px-8 py-6">
         <div className="text-2xl font-bold text-white">Memento AI</div>
@@ -77,7 +80,8 @@ function Landing() {
       <footer className="px-8 py-8 text-center text-gray-400">
         <p>{t('landing.footer')}</p>
       </footer>
-    </div>
+      </div>
+    </BackgroundLayout>
   );
 }
 
