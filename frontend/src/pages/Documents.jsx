@@ -4,6 +4,8 @@ import Sidebar from '../components/Sidebar';
 import Navbar from '../components/Navbar';
 import DocumentCard from '../components/DocumentCard';
 import UploadZone from '../components/UploadZone';
+import BackgroundLayout from '../components/BackgroundLayout';
+import { backgroundImages } from '../constants/backgrounds';
 
 function Documents() {
   const { t } = useTranslation();
@@ -95,48 +97,50 @@ function Documents() {
   };
 
   return (
-    <div className="min-h-screen flex">
-      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-      
-      <div className="flex-1 flex flex-col lg:ml-64">
-        <Navbar onMenuClick={() => setSidebarOpen(true)} title={t('documents.title')} />
+    <BackgroundLayout image={backgroundImages.documents}>
+      <div className="min-h-screen flex">
+        <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
         
-        <main className="flex-1 p-6 overflow-y-auto">
-          <div className="max-w-7xl mx-auto">
-            {/* Upload Section */}
-            <div className="animate-fade-in">
-              <h3 className="text-lg font-semibold text-white mb-4">{t('documents.uploadDocument')}</h3>
-              <UploadZone 
-                onUpload={(data) => {
-                  alert(`Success! Extracted ${data.memories_created || 0} memories.`);
-                  fetchDocuments();
-                }}
-                uploading={uploading}
-              />
-            </div>
+        <div className="flex-1 flex flex-col lg:ml-64">
+          <Navbar onMenuClick={() => setSidebarOpen(true)} title={t('documents.title')} />
+          
+          <main className="flex-1 p-6 overflow-y-auto">
+            <div className="max-w-7xl mx-auto">
+              {/* Upload Section */}
+              <div className="animate-fade-in">
+                <h3 className="text-lg font-semibold text-white mb-4">{t('documents.uploadDocument')}</h3>
+                <UploadZone 
+                  onUpload={(data) => {
+                    alert(`Success! Extracted ${data.memories_created || 0} memories.`);
+                    fetchDocuments();
+                  }}
+                  uploading={uploading}
+                />
+              </div>
 
-            {/* Documents Grid */}
-            {loading ? (
-              <div className="flex items-center justify-center h-64">
-                <div className="text-white animate-pulse">{t('common.loading')}</div>
-              </div>
-            ) : documents.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {documents.map((doc) => (
-                  <DocumentCard key={doc.id} document={doc} onDelete={handleDelete} />
-                ))}
-              </div>
-            ) : (
-              <div className="glass-card-dark p-12 text-center animate-fade-in">
-                <div className="text-6xl mb-4 animate-float">📄</div>
-                <h3 className="text-xl font-semibold text-white mb-2">{t('documents.noDocuments')}</h3>
-                <p className="text-gray-400 mb-6">{t('documents.noDocumentsDesc')}</p>
-              </div>
-            )}
-          </div>
-        </main>
+              {/* Documents Grid */}
+              {loading ? (
+                <div className="flex items-center justify-center h-64">
+                  <div className="text-white animate-pulse">{t('common.loading')}</div>
+                </div>
+              ) : documents.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {documents.map((doc) => (
+                    <DocumentCard key={doc.id} document={doc} onDelete={handleDelete} />
+                  ))}
+                </div>
+              ) : (
+                <div className="glass-card-dark p-12 text-center animate-fade-in">
+                  <div className="text-6xl mb-4 animate-float">📄</div>
+                  <h3 className="text-xl font-semibold text-white mb-2">{t('documents.noDocuments')}</h3>
+                  <p className="text-gray-400 mb-6">{t('documents.noDocumentsDesc')}</p>
+                </div>
+              )}
+            </div>
+          </main>
+        </div>
       </div>
-    </div>
+    </BackgroundLayout>
   );
 }
 

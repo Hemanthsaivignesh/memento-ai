@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react'
 import Sidebar from './components/Sidebar'
+import BackgroundLayout from './components/BackgroundLayout'
+import { backgroundImages } from './constants/backgrounds'
 
 function SystemStatus() {
   const [status, setStatus] = useState(null)
@@ -50,12 +52,13 @@ function SystemStatus() {
   ] : []
 
   return (
-    <div className="min-h-screen flex">
-      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+    <BackgroundLayout image={backgroundImages.systemStatus}>
+      <div className="min-h-screen flex">
+        <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
-      <div className="flex-1 flex flex-col min-w-0 lg:ml-64">
-        {/* Header */}
-        <header className="glass-card-dark border-b border-slate-700/50 px-6 py-4 flex items-center gap-4">
+        <div className="flex-1 flex flex-col min-w-0 lg:ml-64">
+          {/* Header */}
+          <header className="glass-card-dark border-b border-slate-700/50 px-6 py-4 flex items-center gap-4">
           <button
             onClick={() => setSidebarOpen(true)}
             className="lg:hidden text-gray-400 hover:text-white"
@@ -134,8 +137,9 @@ function SystemStatus() {
             </>
           )}
         </main>
+        </div>
       </div>
-    </div>
+    </BackgroundLayout>
   )
 }
 

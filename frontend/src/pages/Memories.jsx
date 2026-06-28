@@ -3,6 +3,8 @@ import { useTranslation } from 'react-i18next';
 import Sidebar from '../components/Sidebar';
 import Navbar from '../components/Navbar';
 import MemoryCard from '../components/MemoryCard';
+import BackgroundLayout from '../components/BackgroundLayout';
+import { backgroundImages } from '../constants/backgrounds';
 
 function Memories() {
   const { t } = useTranslation();
@@ -74,10 +76,11 @@ function Memories() {
   });
 
   return (
-    <div className="min-h-screen flex">
-      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-      
-      <div className="flex-1 flex flex-col lg:ml-64">
+    <BackgroundLayout image={backgroundImages.memories}>
+      <div className="min-h-screen flex">
+        <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+        
+        <div className="flex-1 flex flex-col lg:ml-64">
         <Navbar onMenuClick={() => setSidebarOpen(true)} title={t('memories.title')} />
         
         <main className="flex-1 p-6 overflow-y-auto">
@@ -140,8 +143,9 @@ function Memories() {
             )}
           </div>
         </main>
+        </div>
       </div>
-    </div>
+    </BackgroundLayout>
   );
 }
 

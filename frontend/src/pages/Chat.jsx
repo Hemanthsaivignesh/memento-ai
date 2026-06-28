@@ -3,6 +3,8 @@ import { useTranslation } from 'react-i18next';
 import Sidebar from '../components/Sidebar';
 import Navbar from '../components/Navbar';
 import ChatMessage from '../components/ChatMessage';
+import BackgroundLayout from '../components/BackgroundLayout';
+import { backgroundImages } from '../constants/backgrounds';
 
 function Chat() {
   const { t } = useTranslation();
@@ -241,103 +243,105 @@ function Chat() {
   };
 
   return (
-    <div className="min-h-screen flex">
-      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-      
-      <div className="flex-1 flex flex-col lg:ml-64">
-        <Navbar onMenuClick={() => setSidebarOpen(true)} title={t('chat.title')} />
+    <BackgroundLayout image={backgroundImages.chat}>
+      <div className="min-h-screen flex">
+        <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
         
-        <main className="flex-1 flex flex-col overflow-hidden">
-          {/* Messages Area */}
-          <div className="flex-1 overflow-y-auto p-6">
-            <div className="max-w-4xl mx-auto">
-              {messages.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-full text-center py-20 animate-fade-in">
-                  <div className="text-6xl mb-4 animate-float">💬</div>
-                  <h2 className="text-2xl font-semibold text-white mb-2">{t('chat.startConversation')}</h2>
-                  <p className="text-gray-400 mb-6">{t('chat.description')}</p>
-                  <div className="flex gap-4 flex-wrap justify-center">
-                    <button
-                      onClick={() => setInput('What are my recent memories?')}
-                      className="premium-card px-4 py-2 glass-card-dark border border-purple-500/30 rounded-lg text-gray-300 hover:border-purple-500/50 transition"
-                    >
-                      {t('chat.recentMemories')}
-                    </button>
-                    <button
-                      onClick={() => setInput('Summarize my documents')}
-                      className="premium-card px-4 py-2 glass-card-dark border border-blue-500/30 rounded-lg text-gray-300 hover:border-blue-500/50 transition"
-                    >
-                      {t('chat.summarizeDocuments')}
-                    </button>
+        <div className="flex-1 flex flex-col lg:ml-64">
+          <Navbar onMenuClick={() => setSidebarOpen(true)} title={t('chat.title')} />
+          
+          <main className="flex-1 flex flex-col overflow-hidden">
+            {/* Messages Area */}
+            <div className="flex-1 overflow-y-auto p-6">
+              <div className="max-w-4xl mx-auto">
+                {messages.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center h-full text-center py-20 animate-fade-in">
+                    <div className="text-6xl mb-4 animate-float">💬</div>
+                    <h2 className="text-2xl font-semibold text-white mb-2">{t('chat.startConversation')}</h2>
+                    <p className="text-gray-400 mb-6">{t('chat.description')}</p>
+                    <div className="flex gap-4 flex-wrap justify-center">
+                      <button
+                        onClick={() => setInput('What are my recent memories?')}
+                        className="premium-card px-4 py-2 glass-card-dark border border-purple-500/30 rounded-lg text-gray-300 hover:border-purple-500/50 transition"
+                      >
+                        {t('chat.recentMemories')}
+                      </button>
+                      <button
+                        onClick={() => setInput('Summarize my documents')}
+                        className="premium-card px-4 py-2 glass-card-dark border border-blue-500/30 rounded-lg text-gray-300 hover:border-blue-500/50 transition"
+                      >
+                        {t('chat.summarizeDocuments')}
+                      </button>
+                    </div>
                   </div>
-                </div>
-              ) : (
-                <>
-                  <div className="flex justify-between items-center mb-4">
-                    <button
-                      onClick={clearChat}
-                      className="text-sm text-gray-400 hover:text-white transition"
-                    >
-                      Clear chat
-                    </button>
-                  </div>
-                  {messages.map((msg, idx) => (
-                    <ChatMessage
-                      key={idx}
-                      message={msg}
-                      isLast={idx === messages.length - 1}
-                      isLoading={isLoading}
-                    />
-                  ))}
-                  <div ref={messagesEndRef} />
-                </>
-              )}
-            </div>
-          </div>
-
-          {/* Input Area */}
-          <div className="border-t border-slate-700/50 p-4 glass-card-dark">
-            <div className="max-w-4xl mx-auto flex gap-4">
-              <div className="flex-1 flex gap-3">
-                <input
-                  type="file"
-                  onChange={handleFileUpload}
-                  disabled={uploading || isLoading}
-                  className="hidden"
-                  id="file-upload"
-                />
-                <label
-                  htmlFor="file-upload"
-                  className={`premium-card px-4 py-3 bg-slate-700/50 border border-slate-600/50 text-white rounded-lg hover:bg-slate-600/50 transition cursor-pointer flex items-center gap-2 btn-premium ${
-                    uploading || isLoading ? 'opacity-50 cursor-not-allowed' : ''
-                  }`}
-                >
-                  <span className="text-xl">📎</span>
-                  <span className="hidden sm:inline">{uploading ? t('chat.uploading') : t('chat.upload')}</span>
-                </label>
-                <input
-                  type="text"
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && sendMessage()}
-                  placeholder={t('chat.placeholder')}
-                  disabled={isLoading}
-                  className="flex-1 px-4 py-3 bg-slate-700/50 border border-slate-600/50 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-transparent disabled:opacity-50 backdrop-blur-sm"
-                />
+                ) : (
+                  <>
+                    <div className="flex justify-between items-center mb-4">
+                      <button
+                        onClick={clearChat}
+                        className="text-sm text-gray-400 hover:text-white transition"
+                      >
+                        Clear chat
+                      </button>
+                    </div>
+                    {messages.map((msg, idx) => (
+                      <ChatMessage
+                        key={idx}
+                        message={msg}
+                        isLast={idx === messages.length - 1}
+                        isLoading={isLoading}
+                      />
+                    ))}
+                    <div ref={messagesEndRef} />
+                  </>
+                )}
               </div>
-              <button
-                onClick={sendMessage}
-                disabled={isLoading || !input.trim()}
-                className="premium-card px-6 py-3 bg-purple-600 text-white font-medium rounded-lg hover:bg-purple-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 btn-premium animate-glow"
-              >
-                <span>{t('chat.send')}</span>
-                <span className="text-xl">➤</span>
-              </button>
             </div>
-          </div>
-        </main>
+
+            {/* Input Area */}
+            <div className="border-t border-slate-700/50 p-4 glass-card-dark">
+              <div className="max-w-4xl mx-auto flex gap-4">
+                <div className="flex-1 flex gap-3">
+                  <input
+                    type="file"
+                    onChange={handleFileUpload}
+                    disabled={uploading || isLoading}
+                    className="hidden"
+                    id="file-upload"
+                  />
+                  <label
+                    htmlFor="file-upload"
+                    className={`premium-card px-4 py-3 bg-slate-700/50 border border-slate-600/50 text-white rounded-lg hover:bg-slate-600/50 transition cursor-pointer flex items-center gap-2 btn-premium ${
+                      uploading || isLoading ? 'opacity-50 cursor-not-allowed' : ''
+                    }`}
+                  >
+                    <span className="text-xl">📎</span>
+                    <span className="hidden sm:inline">{uploading ? t('chat.uploading') : t('chat.upload')}</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && sendMessage()}
+                    placeholder={t('chat.placeholder')}
+                    disabled={isLoading}
+                    className="flex-1 px-4 py-3 bg-slate-700/50 border border-slate-600/50 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-transparent disabled:opacity-50 backdrop-blur-sm"
+                  />
+                </div>
+                <button
+                  onClick={sendMessage}
+                  disabled={isLoading || !input.trim()}
+                  className="premium-card px-6 py-3 bg-purple-600 text-white font-medium rounded-lg hover:bg-purple-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 btn-premium animate-glow"
+                >
+                  <span>{t('chat.send')}</span>
+                  <span className="text-xl">➤</span>
+                </button>
+              </div>
+            </div>
+          </main>
+        </div>
       </div>
-    </div>
+    </BackgroundLayout>
   );
 }
 

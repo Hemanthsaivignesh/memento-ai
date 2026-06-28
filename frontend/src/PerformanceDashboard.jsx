@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from './AuthContext';
 import Sidebar from './components/Sidebar';
 import Navbar from './components/Navbar';
+import BackgroundLayout from './components/BackgroundLayout';
+import { backgroundImages } from './constants/backgrounds';
 
 const PerformanceDashboard = () => {
   const { token } = useAuth();
@@ -118,13 +120,14 @@ const PerformanceDashboard = () => {
   }
 
   return (
-    <div className="min-h-screen flex">
-      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-      
-      <div className="flex-1 flex flex-col lg:ml-64">
-        <Navbar onMenuClick={() => setSidebarOpen(true)} title="Performance Dashboard" />
+    <BackgroundLayout image={backgroundImages.performance}>
+      <div className="min-h-screen flex">
+        <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
         
-        <main className="flex-1 p-6 overflow-y-auto">
+        <div className="flex-1 flex flex-col lg:ml-64">
+          <Navbar onMenuClick={() => setSidebarOpen(true)} title="Performance Dashboard" />
+          
+          <main className="flex-1 p-6 overflow-y-auto">
           <div className="max-w-7xl mx-auto">
             <div className="flex justify-between items-center mb-8">
               <h1 className="text-3xl font-bold text-white">Performance Dashboard</h1>
@@ -278,8 +281,9 @@ const PerformanceDashboard = () => {
             </div>
           </div>
         </main>
+        </div>
       </div>
-    </div>
+    </BackgroundLayout>
   );
 };
 
