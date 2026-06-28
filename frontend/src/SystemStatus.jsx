@@ -115,6 +115,52 @@ function SystemStatus() {
         </div>
       </div>
 
+      <div className="status-header" style={{ marginTop: '30px' }}>
+        <h2>📊 Resource Usage</h2>
+      </div>
+
+      <div className="status-grid">
+        <div className="status-card">
+          <div className="card-icon">⚡</div>
+          <div className="card-content">
+            <h3>CPU Usage</h3>
+            <p className="card-value">{status.cpu_usage_percent?.toFixed(1) || 0}%</p>
+          </div>
+        </div>
+
+        <div className="status-card">
+          <div className="card-icon">💾</div>
+          <div className="card-content">
+            <h3>Memory Used</h3>
+            <p className="card-value">{status.memory_usage_mb?.toFixed(1) || 0} MB</p>
+          </div>
+        </div>
+
+        <div className="status-card">
+          <div className="card-icon">🟢</div>
+          <div className="card-content">
+            <h3>Memory Available</h3>
+            <p className="card-value">{status.memory_available_mb?.toFixed(0) || 0} MB</p>
+          </div>
+        </div>
+
+        <div className="status-card">
+          <div className="card-icon">💿</div>
+          <div className="card-content">
+            <h3>Disk Used</h3>
+            <p className="card-value">{status.disk_usage_gb?.toFixed(1) || 0} GB</p>
+          </div>
+        </div>
+
+        <div className="status-card">
+          <div className="card-icon">🟢</div>
+          <div className="card-content">
+            <h3>Disk Free</h3>
+            <p className="card-value">{status.disk_free_gb?.toFixed(1) || 0} GB</p>
+          </div>
+        </div>
+      </div>
+
       <div className="architecture-info">
         <h2>🏗️ Architecture Overview</h2>
         <div className="architecture-grid">
