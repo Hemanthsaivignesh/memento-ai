@@ -1170,7 +1170,26 @@ async def upload_document(
         return DocumentUploadResponse(
             message=f"Successfully processed document. Extracted {len(created_memories)} memories.",
             memories_created=len(created_memories),
-            memories=created_memories
+            memories=[
+                MemoryResponse(
+                    id=mem.id,
+                    title=mem.title,
+                    content=mem.content,
+                    tags=mem.tags,
+                    json_metadata=mem.metadata_json,
+                    source_document=mem.source_file,
+                    created_at=mem.created_at.isoformat() if mem.created_at else "",
+                    memory_type=mem.type,
+                    importance=None,
+                    entities_people=None,
+                    entities_organizations=None,
+                    entities_locations=None,
+                    entities_skills=None,
+                    time_start=None,
+                    time_end=None,
+                    source_documents=None
+                ) for mem in created_memories
+            ]
         )
     
     except HTTPException:
