@@ -34,11 +34,11 @@ body::before {
   left: 0;
   right: 0;
   bottom: 0;
-  background-image: url('/ai-background.jpg');
+  background-image: url('/bg.png');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
-  opacity: 0.15;
+  opacity: 0.3;
   z-index: -1;
 }
 
