@@ -273,6 +273,7 @@ function Navigation() {
 
 function App() {
   return (
+    <div className="app-bg">
     <Router>
       <AuthProvider>
         <Routes>
@@ -354,6 +355,7 @@ function App() {
         </Routes>
       </AuthProvider>
     </Router>
+    </div>
   )
 }
 
