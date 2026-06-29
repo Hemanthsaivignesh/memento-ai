@@ -30,6 +30,13 @@ from language_service import detect_language, get_language_instruction
 from retry_utils import retry_with_logging
 from prompt_sanitizer import PromptSanitizer
 from metrics_service import MetricsService
+from conversation_intelligence import ConversationIntelligence
+from personality_engine import PersonalityEngine
+from prompt_builder import PromptBuilder
+from smart_retrieval import SmartRetriever, DocumentAwareRetriever
+from progress_tracker import ProgressTracker, AsyncProgressEmitter
+from response_formatter import ResponseFormatter
+from followup_generator import FollowupGenerator
 from sqlalchemy.orm import Session
 from models import User
 
@@ -643,7 +650,7 @@ async def get_timeline(current_user: User = Depends(get_current_user), db: Sessi
     return timeline_items
 
 
-# Chat endpoint (streaming)
+# Chat endpoint (streaming with AI intelligence)
 @app.post("/chat")
 @limiter.limit("20/minute")
 async def chat(request: Request, chat_data: ChatRequest, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
@@ -656,7 +663,16 @@ async def chat(request: Request, chat_data: ChatRequest, current_user: User = De
     
     async def stream_response():
         try:
-            # Sanitize user input to prevent prompt injection
+            # Initialize AI modules
+            conversation_intel = ConversationIntelligence(db, current_user.id)
+            personality = PersonalityEngine()
+            prompt_builder = PromptBuilder(personality)
+            doc_retriever = DocumentAwareRetriever(db, current_user.id)
+            progress_emitter = AsyncProgressEmitter()
+            response_formatter = ResponseFormatter()
+            followup_gen = FollowupGenerator(conversation_intel)
+            
+            # Sanitize user input
             sanitized_message = PromptSanitizer.sanitize_input(chat_data.message)
             
             # Check for injection attempts
@@ -665,170 +681,94 @@ async def chat(request: Request, chat_data: ChatRequest, current_user: User = De
                 yield f"data: {json.dumps({'error': 'Invalid input detected. Please rephrase your message.'})}\n\n"
                 return
             
-            if llm is None:
-                # Fallback: Retrieve memories and provide simple response without LLM
-                retriever = MemoryRetriever()
-                relevant_memories = retriever.retrieve_hybrid(db, sanitized_message, top_k=5, user_id=current_user.id)
+            # Emit typing indicator
+            yield f"data: {json.dumps({'type': 'typing', 'message': 'Memento AI is thinking...'})}\n\n"
+            
+            # Process message with conversation intelligence
+            intelligence = conversation_intel.process_message(sanitized_message)
+            
+            # Detect language
+            detected_language = detect_language(sanitized_message)
+            
+            # Emit progress updates
+            has_documents = doc_retriever.has_documents()
+            async for progress in progress_emitter.emit_processing_pipeline(
+                has_memories=True,
+                has_documents=has_documents
+            ):
+                yield f"data: {json.dumps(progress)}\n\n"
+            
+            # Retrieve with document priority
+            retrieved_memories, used_docs = doc_retriever.retrieve_with_document_priority(
+                sanitized_message,
+                top_k=5,
+                intent=intelligence['intent'],
+                conversation_context=intelligence['history']
+            )
+            
+            # Format memories for prompt
+            formatted_memories = []
+            for mem in retrieved_memories:
+                formatted_memories.append({
+                    'title': mem['title'],
+                    'content': mem['content'],
+                    'source_file': mem['source_file'],
+                    'relevance_score': mem['enhanced_score']
+                })
+            
+            # Build dynamic prompt
+            if conversation_intel.should_use_coding_mode(sanitized_message):
+                prompt = prompt_builder.build_coding_prompt(
+                    sanitized_message,
+                    intelligence,
+                    intelligence['history'],
+                    detected_language
+                )
+            else:
+                prompt = prompt_builder.build_prompt(
+                    sanitized_message,
+                    intelligence,
+                    formatted_memories,
+                    intelligence['history'],
+                    language=detected_language
+                )
+            
+            # Check cache
+            cached_response = response_cache.get(prompt, max_tokens=512, temperature=0.7)
+            if cached_response:
+                # Stream cached response
+                for token in cached_response:
+                    yield f"data: {json.dumps({'token': token})}\n\n"
                 
-                if relevant_memories:
-                    # Build a simple response from retrieved memories
-                    response_text = "I found these memories that might be relevant:\n\n"
-                    for memory, score in relevant_memories:
-                        response_text += f"- {memory.title}: {memory.content[:200]}...\n"
-                    response_text += "\nNote: For intelligent responses, please download the AI model by running 'python setup_models.py' in the backend directory."
-                    
-                    # Build sources
-                    sources = []
-                    for memory, score in relevant_memories:
-                        citation = SourceCitation(
-                            document=memory.source_file,
-                            memory=memory.title,
-                            relevance_score=score
-                        )
-                        sources.append(citation)
-                    
-                    # Stream the response
-                    for char in response_text:
-                        yield f"data: {json.dumps({'token': char})}\n\n"
-                    yield f"data: {json.dumps({'sources': [s.dict() for s in sources]})}\n\n"
-                    yield f"data: {json.dumps({'done': True})}\n\n"
-                else:
-                    # No memories found
-                    response_text = "I don't have any memories that match your query. Please upload some documents first. For intelligent responses, please download the AI model by running 'python setup_models.py' in the backend directory."
-                    for char in response_text:
-                        yield f"data: {json.dumps({'token': char})}\n\n"
-                    yield f"data: {json.dumps({'done': True})}\n\n"
+                # Build sources
+                sources = []
+                for mem in retrieved_memories:
+                    if mem['source_file']:
+                        sources.append({
+                            'document': mem['source_file'],
+                            'memory': mem['title'],
+                            'relevance_score': mem['enhanced_score']
+                        })
+                
+                # Generate follow-ups
+                followups = followup_gen.generate_followups(
+                    sanitized_message,
+                    cached_response,
+                    intelligence['intent'],
+                    has_documents,
+                    intelligence['history']
+                )
+                
+                yield f"data: {json.dumps({'sources': sources, 'followups': followups, 'cached': True, 'done': True})}\n\n"
+                ConversationService.create_conversation(db, chat_data.message, cached_response, current_user.id)
                 return
             
-            # Detect language from user message
-            detected_language = detect_language(sanitized_message)
-            language_instruction = get_language_instruction(detected_language)
+            # Generate response with retry logic
+            @retry_with_logging(max_retries=2, initial_delay=0.5, backoff_factor=2.0, operation_name="LLM generation")
+            def generate_with_retry(prompt_text):
+                return llm.generate_stream(prompt_text, max_tokens=512, temperature=0.7)
             
-            # Retrieve relevant memories using Hybrid Search (filtered by user)
-            retriever = MemoryRetriever()
-            relevant_memories = retriever.retrieve_hybrid(db, sanitized_message, top_k=3, user_id=current_user.id)
-            
-            # Build context from retrieved memories
-            retrieved_context = retriever.format_context(relevant_memories)
-            
-            # Query all files uploaded by this user to answer questions about media files, sizes, upload times, and storage space
-            all_user_memories = db.query(Memory).filter(Memory.user_id == current_user.id).all()
-            uploaded_files = []
-            total_space = 0
-            for m in all_user_memories:
-                if m.source_file or (m.tags and 'upload' in m.tags):
-                    file_info = {
-                        "name": m.source_file or m.title,
-                        "type": "file",
-                        "size": "unknown",
-                        "uploaded": m.created_at.strftime('%Y-%m-%d %H:%M:%S UTC')
-                    }
-                    if m.metadata_json:
-                        try:
-                            meta = json.loads(m.metadata_json)
-                            file_info["type"] = meta.get("file_type", file_info["type"])
-                            file_info["size"] = meta.get("file_size_human", file_info["size"])
-                            total_space += meta.get("file_size_bytes", 0)
-                        except:
-                            pass
-                    uploaded_files.append(file_info)
-            
-            files_summary_lines = []
-            if uploaded_files:
-                files_summary_lines.append("\nUploaded Files & Storage Metadata:")
-                files_summary_lines.append(f"- Total storage occupied: {_format_size(total_space)}")
-                for f in uploaded_files:
-                    files_summary_lines.append(
-                        f"- File: '{f['name']}' | Type: {f['type'].upper()} | Size: {f['size']} | Uploaded: {f['uploaded']}"
-                    )
-            
-            files_context = "\n".join(files_summary_lines)
-            context = (retrieved_context + "\n" + files_context).strip()
-            
-            # Load conversation history (last 5 turns) for multi-turn conversational context
-            recent_convs = ConversationService.get_all_conversations(db, skip=0, limit=5, user_id=current_user.id)
-            recent_convs.reverse()  # chronological order
-            
-            history_str = ""
-            for conv in recent_convs:
-                history_str += f"User: {conv.question}\nAssistant: {conv.answer}\n"
-            
-            # Build structured source citations
-            sources = []
-            for memory, score in relevant_memories:
-                citation = SourceCitation(
-                    document=memory.source_file,
-                    memory=memory.title,
-                    relevance_score=score
-                )
-                sources.append(citation)
-            
-            # Generate response with or without context
-            if context:
-                # Augment prompt with context, history, and language instruction
-                augmented_prompt = f"""You are a helpful offline personal memory assistant. Answer the user's question based on the retrieved context below.
-If the answer cannot be found in the context, use your general knowledge but mention it is not in your personal memories.
-
-{language_instruction}
-
-Retrieved Context:
-{context}
-
-Recent Conversation History:
-{history_str}
-User question: {sanitized_message}
-
-Answer:"""
-                
-                # Check cache first for repeated queries
-                cached_response = response_cache.get(augmented_prompt, max_tokens=512, temperature=0.7)
-                if cached_response:
-                    # Stream cached response
-                    for token in cached_response:
-                        yield f"data: {json.dumps({'token': token})}\n\n"
-                    
-                    # Send sources and metrics (cached)
-                    sources_data = [s.dict() for s in sources]
-                    yield f"data: {json.dumps({'sources': sources_data, 'cached': True, 'done': True})}\n\n"
-                    ConversationService.create_conversation(db, chat_data.message, cached_response, current_user.id)
-                    return
-                
-                # Use retry logic for LLM generation (CPU inference can be slow)
-                @retry_with_logging(max_retries=2, initial_delay=0.5, backoff_factor=2.0, operation_name="LLM generation")
-                def generate_with_retry(prompt):
-                    return llm.generate_stream(prompt, max_tokens=512, temperature=0.7)
-                
-                stream = generate_with_retry(augmented_prompt)
-            else:
-                # No relevant memories found, use chat history prompt with language instruction
-                chat_prompt = f"""You are a helpful offline personal memory assistant.
-                
-{language_instruction}
-
-Recent Conversation History:
-{history_str}
-User question: {sanitized_message}
-
-Answer:"""
-                
-                # Check cache first for repeated queries
-                cached_response = response_cache.get(chat_prompt, max_tokens=512, temperature=0.7)
-                if cached_response:
-                    # Stream cached response
-                    for token in cached_response:
-                        yield f"data: {json.dumps({'token': token})}\n\n"
-                    
-                    # Send sources and metrics (cached)
-                    yield f"data: {json.dumps({'sources': [], 'cached': True, 'done': True})}\n\n"
-                    ConversationService.create_conversation(db, chat_data.message, cached_response, current_user.id)
-                    return
-                
-                # Use retry logic for LLM generation (CPU inference can be slow)
-                @retry_with_logging(max_retries=2, initial_delay=0.5, backoff_factor=2.0, operation_name="LLM generation")
-                def generate_with_retry(prompt):
-                    return llm.generate_stream(prompt, max_tokens=512, temperature=0.7)
-                
-                stream = generate_with_retry(chat_prompt)
+            stream = generate_with_retry(prompt)
             
             # Stream tokens
             full_response = ""
@@ -838,13 +778,40 @@ Answer:"""
                 token_count += 1
                 yield f"data: {json.dumps({'token': token})}\n\n"
             
-            # Cache the response for future use
-            if context:
-                response_cache.set(augmented_prompt, full_response, max_tokens=512, temperature=0.7)
-            else:
-                response_cache.set(chat_prompt, full_response, max_tokens=512, temperature=0.7)
+            # Format response
+            formatted_response = response_formatter.format_markdown(full_response)
+            formatted_response = response_formatter.add_structure(formatted_response, intelligence['intent'])
+            formatted_response = response_formatter.ensure_readability(formatted_response)
             
-            # Record inference metrics to database
+            # Add source attribution
+            sources = []
+            for mem in retrieved_memories:
+                if mem['source_file']:
+                    sources.append({
+                        'document': mem['source_file'],
+                        'memory': mem['title'],
+                        'relevance_score': mem['enhanced_score']
+                    })
+            
+            if sources:
+                formatted_response = response_formatter.add_source_attribution(formatted_response, sources)
+            
+            # Generate follow-up questions
+            followups = followup_gen.generate_followups(
+                sanitized_message,
+                formatted_response,
+                intelligence['intent'],
+                has_documents,
+                intelligence['history']
+            )
+            
+            if followups:
+                formatted_response = response_formatter.add_followup_suggestions(formatted_response, followups)
+            
+            # Cache the response
+            response_cache.set(prompt, full_response, max_tokens=512, temperature=0.7)
+            
+            # Record inference metrics
             try:
                 metrics_service = MetricsService(db)
                 model_name = llm.model_path.split("/")[-1] if "/" in llm.model_path else llm.model_path
@@ -865,12 +832,11 @@ Answer:"""
                 "model": llm.model_path.split("/")[-1] if "/" in llm.model_path else llm.model_path
             }
             
-            # Send sources and metrics at the end
-            sources_data = [s.dict() for s in sources]
-            yield f"data: {json.dumps({'sources': sources_data, 'metrics': metrics, 'cached': False, 'done': True})}\n\n"
+            # Send final data
+            yield f"data: {json.dumps({'sources': sources, 'followups': followups, 'metrics': metrics, 'cached': False, 'done': True})}\n\n"
             
-            # Save conversation to database
-            ConversationService.create_conversation(db, chat_data.message, full_response, current_user.id)
+            # Save conversation
+            ConversationService.create_conversation(db, chat_data.message, formatted_response, current_user.id)
             
         except Exception as e:
             yield f"data: {json.dumps({'error': str(e)})}\n\n"

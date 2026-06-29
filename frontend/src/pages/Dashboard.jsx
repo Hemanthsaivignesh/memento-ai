@@ -189,15 +189,15 @@ function Dashboard() {
   ];
 
   return (
-    <div className="min-h-screen flex">
-      <div className="app-bg" />
-      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+    <BackgroundLayout image={backgroundImages.dashboard}>
+      <div className="min-h-screen flex">
+        <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
-      <div className="flex-1 flex flex-col lg:ml-64 min-h-screen">
-        <Navbar onMenuClick={() => setSidebarOpen(true)} title="Dashboard" subtitle={`${getGreeting()}, ${user.name || 'there'}`} />
+        <div className="flex-1 flex flex-col lg:ml-64 min-h-screen">
+          <Navbar onMenuClick={() => setSidebarOpen(true)} title="Dashboard" subtitle={`${getGreeting()}, ${user.name || 'there'}`} />
 
-        <main className="flex-1 p-5 md:p-6 overflow-y-auto">
-          <div className="max-w-7xl mx-auto space-y-8">
+          <main className="flex-1 p-5 md:p-6 overflow-y-auto">
+            <div className="max-w-7xl mx-auto space-y-8">
 
             {/* Welcome Banner */}
             <div className="glass-card p-6 border border-purple-500/20 bg-gradient-to-r from-purple-600/10 via-violet-600/5 to-transparent animate-fade-in">
@@ -328,8 +328,9 @@ function Dashboard() {
               </div>
             </div>
 
-          </div>
-        </main>
+            </div>
+          </main>
+        </div>
       </div>
     </BackgroundLayout>
   );

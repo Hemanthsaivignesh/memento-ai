@@ -6,6 +6,8 @@ import {
 } from 'lucide-react';
 import Sidebar from './components/Sidebar';
 import Navbar from './components/Navbar';
+import BackgroundLayout from './components/BackgroundLayout';
+import { backgroundImages } from './constants/backgrounds';
 
 const API_BASE = 'http://localhost:8000';
 
@@ -140,19 +142,19 @@ function SystemStatus() {
   ];
 
   return (
-    <div className="min-h-screen flex">
-      <div className="app-bg" />
-      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+    <BackgroundLayout image={backgroundImages.systemStatus}>
+      <div className="min-h-screen flex">
+        <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
-      <div className="flex-1 flex flex-col lg:ml-64 min-h-screen">
-        <Navbar
-          onMenuClick={() => setSidebarOpen(true)}
-          title="System Status"
-          subtitle={lastRefreshed ? `Last refreshed: ${lastRefreshed} · Auto-refresh every 8s` : 'Loading...'}
-        />
+        <div className="flex-1 flex flex-col lg:ml-64 min-h-screen">
+          <Navbar
+            onMenuClick={() => setSidebarOpen(true)}
+            title="System Status"
+            subtitle={lastRefreshed ? `Last refreshed: ${lastRefreshed} · Auto-refresh every 8s` : 'Loading...'}
+          />
 
-        <main className="flex-1 p-5 md:p-6 overflow-y-auto">
-          <div className="max-w-7xl mx-auto space-y-6">
+          <main className="flex-1 p-5 md:p-6 overflow-y-auto">
+            <div className="max-w-7xl mx-auto space-y-6">
 
             {/* Status Pills */}
             <div className="flex flex-wrap gap-3 animate-fade-in">
@@ -231,11 +233,11 @@ function SystemStatus() {
                 </div>
               </>
             )}
-          </div>
-        </main>
+            </div>
+          </main>
         </div>
       </div>
-    </div>
+    </BackgroundLayout>
   );
 }
 

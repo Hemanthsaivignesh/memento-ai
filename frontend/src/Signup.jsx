@@ -57,19 +57,7 @@ function Signup() {
   };
 
   return (
-    <div
-      className="min-h-screen relative"
-      style={{
-        backgroundImage: "url('/bg-clock.jpg')",
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundRepeat: 'no-repeat',
-      }}
-    >
-      {/* Dark overlay */}
-      <div className="absolute inset-0 bg-black/55 pointer-events-none" />
-
-      {/* Content above overlay */}
+    <BackgroundLayout image={backgroundImages.signup}>
       <div className="relative z-10 min-h-screen flex items-center justify-center px-4">
         <div className="max-w-md w-full">
           {/* Logo/Brand */}
@@ -166,13 +154,6 @@ function Signup() {
                 </Link>
               </p>
             </div>
-          </div>
-
-          {/* Back to Home */}
-          <div className="mt-6 text-center">
-            <Link to="/" className="text-gray-400 hover:text-white transition">
-              {t('common.back')}
-            </Link>
           </div>
         </div>
       </div>

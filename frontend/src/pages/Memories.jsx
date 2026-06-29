@@ -232,15 +232,15 @@ function Memories() {
   ];
 
   return (
-    <div className="min-h-screen flex">
-      <div className="app-bg" />
-      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+    <BackgroundLayout image={backgroundImages.memories}>
+      <div className="min-h-screen flex">
+        <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
-      <div className="flex-1 flex flex-col lg:ml-64 min-h-screen">
-        <Navbar onMenuClick={() => setSidebarOpen(true)} title="Memory Explorer" subtitle="Browse your extracted knowledge" />
+        <div className="flex-1 flex flex-col lg:ml-64 min-h-screen">
+          <Navbar onMenuClick={() => setSidebarOpen(true)} title="Memory Explorer" subtitle="Browse your extracted knowledge" />
 
-        <main className="flex-1 p-5 md:p-6 overflow-y-auto">
-          <div className="max-w-7xl mx-auto space-y-6">
+          <main className="flex-1 p-5 md:p-6 overflow-y-auto">
+            <div className="max-w-7xl mx-auto space-y-6">
 
             {/* Controls */}
             <div className="glass-card p-4 space-y-3">
@@ -345,8 +345,8 @@ function Memories() {
                 </p>
               </div>
             )}
-          </div>
-        </main>
+            </div>
+          </main>
         </div>
       </div>
     </BackgroundLayout>

@@ -24,6 +24,9 @@ function Chat() {
   const [isLoading, setIsLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [showScrollBtn, setShowScrollBtn] = useState(false);
+  const [typingIndicator, setTypingIndicator] = useState(false);
+  const [progress, setProgress] = useState(null);
+  const [followups, setFollowups] = useState([]);
   const messagesEndRef = useRef(null);
   const messagesAreaRef = useRef(null);
   const inputRef = useRef(null);
@@ -134,6 +137,12 @@ function Chat() {
                 return updated;
               });
             }
+            if (data.type === 'typing') {
+              setTypingIndicator(true);
+            }
+            if (data.type === 'progress') {
+              setProgress(data);
+            }
             if (data.sources) {
               setMessages(prev => {
                 const updated = [...prev];
@@ -141,12 +150,19 @@ function Chat() {
                 return updated;
               });
             }
+            if (data.followups) {
+              setFollowups(data.followups);
+            }
             if (data.metrics) {
               setMessages(prev => {
                 const updated = [...prev];
                 updated[updated.length - 1] = { ...updated[updated.length - 1], metrics: data.metrics };
                 return updated;
               });
+            }
+            if (data.done) {
+              setTypingIndicator(false);
+              setProgress(null);
             }
             if (data.error) {
               setMessages(prev => {
@@ -245,14 +261,15 @@ function Chat() {
   const isEmpty = messages.length === 0;
 
   return (
-    <div className="min-h-screen flex">
-      <div className="app-bg" />
-      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+    <BackgroundLayout image={backgroundImages.chat}>
+      <div className="min-h-screen flex">
+        <div className="app-bg" />
+        <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
-      <div className="flex-1 flex flex-col lg:ml-64 min-h-screen">
-        <Navbar onMenuClick={() => setSidebarOpen(true)} title="AI Chat" subtitle="Ask anything about your memories" />
+        <div className="flex-1 flex flex-col lg:ml-64 min-h-screen">
+          <Navbar onMenuClick={() => setSidebarOpen(true)} title="AI Chat" subtitle="Ask anything about your memories" />
 
-        <main className="flex-1 flex flex-col overflow-hidden">
+          <main className="flex-1 flex flex-col overflow-hidden">
           {/* Messages area */}
           <div
             ref={messagesAreaRef}
@@ -294,6 +311,37 @@ function Chat() {
                       onRegenerate={idx === messages.length - 1 && msg.role === 'assistant' ? handleRegenerate : null}
                     />
                   ))}
+                  {typingIndicator && (
+                    <div className="flex items-center gap-2 text-slate-400 text-sm py-4">
+                      <div className="flex gap-1">
+                        <span className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
+                        <span className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
+                        <span className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
+                      </div>
+                      <span>Memento AI is thinking...</span>
+                    </div>
+                  )}
+                  {progress && (
+                    <div className="text-slate-400 text-sm py-2">
+                      {progress.message}
+                    </div>
+                  )}
+                  {followups.length > 0 && !isLoading && (
+                    <div className="mt-4 pt-4 border-t border-white/10">
+                      <p className="text-xs text-slate-500 mb-2">You might also ask:</p>
+                      <div className="flex flex-wrap gap-2">
+                        {followups.map((followup, i) => (
+                          <button
+                            key={i}
+                            onClick={() => sendMessage(followup)}
+                            className="px-3 py-1.5 text-xs glass border border-white/10 text-slate-300 hover:text-purple-400 hover:border-purple-500/40 rounded-lg transition"
+                          >
+                            {followup}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                   <div ref={messagesEndRef} />
                 </>
               )}
@@ -375,50 +423,10 @@ function Chat() {
                 All processing is done locally · No data leaves your device · Powered by llama.cpp
               </p>
             </div>
-
-            {/* Input Area */}
-            <div className="border-t border-slate-700/50 p-4 glass-card-dark">
-              <div className="max-w-4xl mx-auto flex gap-4">
-                <div className="flex-1 flex gap-3">
-                  <input
-                    type="file"
-                    onChange={handleFileUpload}
-                    disabled={uploading || isLoading}
-                    className="hidden"
-                    id="file-upload"
-                  />
-                  <label
-                    htmlFor="file-upload"
-                    className={`premium-card px-4 py-3 bg-slate-700/50 border border-slate-600/50 text-white rounded-lg hover:bg-slate-600/50 transition cursor-pointer flex items-center gap-2 btn-premium ${
-                      uploading || isLoading ? 'opacity-50 cursor-not-allowed' : ''
-                    }`}
-                  >
-                    <span className="text-xl">📎</span>
-                    <span className="hidden sm:inline">{uploading ? t('chat.uploading') : t('chat.upload')}</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && sendMessage()}
-                    placeholder={t('chat.placeholder')}
-                    disabled={isLoading}
-                    className="flex-1 px-4 py-3 bg-slate-700/50 border border-slate-600/50 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-transparent disabled:opacity-50 backdrop-blur-sm"
-                  />
-                </div>
-                <button
-                  onClick={sendMessage}
-                  disabled={isLoading || !input.trim()}
-                  className="premium-card px-6 py-3 bg-purple-600 text-white font-medium rounded-lg hover:bg-purple-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 btn-premium animate-glow"
-                >
-                  <span>{t('chat.send')}</span>
-                  <span className="text-xl">➤</span>
-                </button>
-              </div>
-            </div>
-          </main>
-        </div>
+          </div>
+        </main>
       </div>
+    </div>
     </BackgroundLayout>
   );
 }
