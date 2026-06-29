@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import Sidebar from '../components/Sidebar';
 import Navbar from '../components/Navbar';
+import BackgroundLayout from '../components/BackgroundLayout';
+import { backgroundImages } from '../constants/backgrounds';
 
 function Settings() {
   const { t } = useTranslation();
@@ -55,13 +57,14 @@ function Settings() {
   };
 
   return (
-    <div className="min-h-screen flex">
-      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-      
-      <div className="flex-1 flex flex-col lg:ml-64">
-        <Navbar onMenuClick={() => setSidebarOpen(true)} title={t('settings.title')} />
+    <BackgroundLayout image={backgroundImages.settings}>
+      <div className="min-h-screen flex">
+        <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
         
-        <main className="flex-1 p-6 overflow-y-auto">
+        <div className="flex-1 flex flex-col lg:ml-64">
+          <Navbar onMenuClick={() => setSidebarOpen(true)} title={t('settings.title')} />
+          
+          <main className="flex-1 p-6 overflow-y-auto">
           <div className="max-w-4xl mx-auto space-y-8">
             {/* Profile Section */}
             <div className="glass-card-dark p-6 animate-fade-in">
@@ -246,8 +249,9 @@ function Settings() {
             </div>
           </div>
         </main>
+        </div>
       </div>
-    </div>
+    </BackgroundLayout>
   );
 }
 
