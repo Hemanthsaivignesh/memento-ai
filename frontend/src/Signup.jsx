@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from './AuthContext';
+import BackgroundLayout from './components/BackgroundLayout';
+import { backgroundImages } from './constants/backgrounds';
 
 function Signup() {
   const { login } = useAuth();
@@ -49,168 +51,122 @@ function Signup() {
     }
   };
 
-  const inputStyle = {
-    width: '100%',
-    padding: '0.75rem 1rem',
-    background: 'rgba(255,255,255,0.08)',
-    border: '1px solid rgba(255,255,255,0.15)',
-    borderRadius: '0.625rem',
-    color: '#fff',
-    fontSize: '0.95rem',
-    outline: 'none',
-    boxSizing: 'border-box',
-    transition: 'border-color 0.2s',
-  };
-
-  const labelStyle = {
-    display: 'block',
-    color: '#cbd5e1',
-    fontSize: '0.875rem',
-    fontWeight: 500,
-    marginBottom: '0.5rem',
-  };
-
   return (
     <BackgroundLayout image={backgroundImages.signup}>
       <div className="min-h-screen flex items-center justify-center px-4">
         <div className="max-w-md w-full">
+
           {/* Logo/Brand */}
           <div className="text-center mb-8">
             <h1 className="text-4xl font-bold text-white mb-2">Memento AI</h1>
-            <p className="text-gray-400">{t('auth.signupTitle')}</p>
+            <p className="text-gray-400">Create your personal AI memory assistant</p>
           </div>
 
-        {/* Card */}
-        <div style={{
-          background: 'rgba(255,255,255,0.07)',
-          backdropFilter: 'blur(20px)',
-          borderRadius: '1.25rem',
-          padding: '2rem',
-          border: '1px solid rgba(139,92,246,0.2)',
-          boxShadow: '0 25px 50px rgba(0,0,0,0.4)',
-        }}>
-          {error && (
-            <div style={{
-              marginBottom: '1rem',
-              padding: '0.75rem 1rem',
-              background: 'rgba(239,68,68,0.15)',
-              border: '1px solid rgba(239,68,68,0.4)',
-              borderRadius: '0.5rem',
-              color: '#fca5a5',
-              fontSize: '0.875rem',
-            }}>
-              {error}
+          {/* Signup Card */}
+          <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-8 shadow-2xl">
+            {error && (
+              <div className="mb-4 p-3 bg-red-500/20 border border-red-500/50 rounded-lg text-red-200 text-sm">
+                {error}
+              </div>
+            )}
+
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label htmlFor="signup-name" className="block text-sm font-medium text-gray-300 mb-2">
+                  Full Name
+                </label>
+                <input
+                  id="signup-name"
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  required
+                  autoComplete="name"
+                  className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
+                  placeholder="John Doe"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="signup-email" className="block text-sm font-medium text-gray-300 mb-2">
+                  Email
+                </label>
+                <input
+                  id="signup-email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  autoComplete="email"
+                  className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
+                  placeholder="you@example.com"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="signup-password" className="block text-sm font-medium text-gray-300 mb-2">
+                  Password
+                </label>
+                <input
+                  id="signup-password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  minLength={6}
+                  autoComplete="new-password"
+                  className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
+                  placeholder="At least 6 characters"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="signup-confirm" className="block text-sm font-medium text-gray-300 mb-2">
+                  Confirm Password
+                </label>
+                <input
+                  id="signup-confirm"
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  required
+                  minLength={6}
+                  autoComplete="new-password"
+                  className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
+                  placeholder="Re-enter your password"
+                />
+              </div>
+
+              <button
+                id="signup-submit"
+                type="submit"
+                disabled={loading}
+                className="w-full py-3 mt-2 bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-slate-900 transition disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {loading ? 'Creating account...' : 'Create Account'}
+              </button>
+            </form>
+
+            <div className="mt-6 text-center">
+              <p className="text-gray-400 text-sm">
+                Already have an account?{' '}
+                <Link to="/login" className="text-purple-400 hover:text-purple-300 font-medium transition">
+                  Sign in
+                </Link>
+              </p>
             </div>
-          )}
-
-          <form onSubmit={handleSubmit}>
-            <div style={{ marginBottom: '1.1rem' }}>
-              <label style={labelStyle}>Full Name</label>
-              <input
-                id="signup-name"
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                required
-                placeholder="John Doe"
-                autoComplete="name"
-                style={inputStyle}
-                onFocus={(e) => e.target.style.borderColor = 'rgba(139,92,246,0.6)'}
-                onBlur={(e) => e.target.style.borderColor = 'rgba(255,255,255,0.15)'}
-              />
-            </div>
-
-            <div style={{ marginBottom: '1.1rem' }}>
-              <label style={labelStyle}>Email</label>
-              <input
-                id="signup-email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                placeholder="you@example.com"
-                autoComplete="email"
-                style={inputStyle}
-                onFocus={(e) => e.target.style.borderColor = 'rgba(139,92,246,0.6)'}
-                onBlur={(e) => e.target.style.borderColor = 'rgba(255,255,255,0.15)'}
-              />
-            </div>
-
-            <div style={{ marginBottom: '1.1rem' }}>
-              <label style={labelStyle}>Password</label>
-              <input
-                id="signup-password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                minLength={6}
-                placeholder="At least 6 characters"
-                autoComplete="new-password"
-                style={inputStyle}
-                onFocus={(e) => e.target.style.borderColor = 'rgba(139,92,246,0.6)'}
-                onBlur={(e) => e.target.style.borderColor = 'rgba(255,255,255,0.15)'}
-              />
-            </div>
-
-            <div style={{ marginBottom: '1.5rem' }}>
-              <label style={labelStyle}>Confirm Password</label>
-              <input
-                id="signup-confirm"
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                required
-                minLength={6}
-                placeholder="Re-enter your password"
-                autoComplete="new-password"
-                style={inputStyle}
-                onFocus={(e) => e.target.style.borderColor = 'rgba(139,92,246,0.6)'}
-                onBlur={(e) => e.target.style.borderColor = 'rgba(255,255,255,0.15)'}
-              />
-            </div>
-
-            <button
-              id="signup-submit"
-              type="submit"
-              disabled={loading}
-              style={{
-                width: '100%',
-                padding: '0.875rem',
-                background: loading ? 'rgba(139,92,246,0.4)' : 'linear-gradient(135deg, #7c3aed, #6d28d9)',
-                color: '#fff',
-                fontWeight: 600,
-                fontSize: '1rem',
-                borderRadius: '0.625rem',
-                border: 'none',
-                cursor: loading ? 'not-allowed' : 'pointer',
-                transition: 'opacity 0.2s',
-                boxShadow: '0 4px 15px rgba(124,58,237,0.4)',
-              }}
-              onMouseEnter={(e) => { if (!loading) e.target.style.opacity = '0.9'; }}
-              onMouseLeave={(e) => { e.target.style.opacity = '1'; }}
-            >
-              {loading ? 'Creating account...' : 'Create Account'}
-            </button>
-          </form>
-
-          <div style={{ marginTop: '1.5rem', textAlign: 'center' }}>
-            <p style={{ color: '#94a3b8', fontSize: '0.875rem' }}>
-              Already have an account?{' '}
-              <Link to="/login" style={{ color: '#a78bfa', fontWeight: 500, textDecoration: 'none' }}>
-                Sign in
-              </Link>
-            </p>
           </div>
-        </div>
 
-        <div style={{ marginTop: '1.5rem', textAlign: 'center' }}>
-          <Link to="/" style={{ color: '#64748b', fontSize: '0.875rem', textDecoration: 'none' }}>
-            ← Back to home
-          </Link>
+          {/* Back to Home */}
+          <div className="mt-6 text-center">
+            <Link to="/" className="text-gray-400 hover:text-white transition text-sm">
+              ← Back to Home
+            </Link>
+          </div>
+
         </div>
       </div>
-    </div>
+    </BackgroundLayout>
   );
 }
 
