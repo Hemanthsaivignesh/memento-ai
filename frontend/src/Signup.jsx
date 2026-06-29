@@ -57,8 +57,20 @@ function Signup() {
   };
 
   return (
-    <BackgroundLayout image={backgroundImages.signup}>
-      <div className="min-h-screen flex items-center justify-center px-4">
+    <div
+      className="min-h-screen relative"
+      style={{
+        backgroundImage: "url('/bg-clock.jpg')",
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
+      }}
+    >
+      {/* Dark overlay */}
+      <div className="absolute inset-0 bg-black/55 pointer-events-none" />
+
+      {/* Content above overlay */}
+      <div className="relative z-10 min-h-screen flex items-center justify-center px-4">
         <div className="max-w-md w-full">
           {/* Logo/Brand */}
           <div className="text-center mb-8">
@@ -79,15 +91,15 @@ function Signup() {
                 <label htmlFor="name" className="block text-sm font-medium text-gray-300 mb-2">
                   {t('auth.name')}
                 </label>
-              <input
-                id="name"
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                required
-                className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
-                placeholder={t('auth.namePlaceholder')}
-              />
+                <input
+                  id="name"
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  required
+                  className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
+                  placeholder={t('auth.namePlaceholder')}
+                />
               </div>
 
               <div>
