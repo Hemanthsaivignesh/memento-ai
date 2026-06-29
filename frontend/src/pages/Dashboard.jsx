@@ -331,7 +331,7 @@ function Dashboard() {
           </div>
         </main>
       </div>
-    </BackgroundLayout>
+    </div>
   );
 }
 

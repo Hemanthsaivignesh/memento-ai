@@ -347,9 +347,8 @@ function Memories() {
             )}
           </div>
         </main>
-        </div>
       </div>
-    </BackgroundLayout>
+    </div>
   );
 }
 

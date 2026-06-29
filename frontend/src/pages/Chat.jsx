@@ -1,26 +1,35 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
-import { useTranslation } from 'react-i18next';
-import { Send, Paperclip, ChevronDown, MessageSquare, Sparkles, Zap, BookOpen, Brain } from 'lucide-react';
-import Sidebar from '../components/Sidebar';
-import Navbar from '../components/Navbar';
-import ChatMessage from '../components/ChatMessage';
-import BackgroundLayout from '../components/BackgroundLayout';
-import { backgroundImages } from '../constants/backgrounds';
+import { useState, useRef, useEffect, useCallback } from "react";
+import { useTranslation } from "react-i18next";
+import {
+  Send,
+  Paperclip,
+  ChevronDown,
+  MessageSquare,
+  Sparkles,
+  Zap,
+  BookOpen,
+  Brain,
+} from "lucide-react";
+import Sidebar from "../components/Sidebar";
+import Navbar from "../components/Navbar";
+import ChatMessage from "../components/ChatMessage";
+import BackgroundLayout from "../components/BackgroundLayout";
+import { backgroundImages } from "../constants/backgrounds";
 
-const API_BASE = 'http://localhost:8000';
+const API_BASE = "http://localhost:8000";
 
 const SUGGESTIONS = [
-  { icon: <Brain size={16} />, text: 'What are my recent memories?' },
-  { icon: <BookOpen size={16} />, text: 'Summarize my documents' },
-  { icon: <Sparkles size={16} />, text: 'What did I learn this week?' },
-  { icon: <Zap size={16} />, text: 'Show my top memories' },
+  { icon: <Brain size={16} />, text: "What are my recent memories?" },
+  { icon: <BookOpen size={16} />, text: "Summarize my documents" },
+  { icon: <Sparkles size={16} />, text: "What did I learn this week?" },
+  { icon: <Zap size={16} />, text: "Show my top memories" },
 ];
 
 function Chat() {
   const { t } = useTranslation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [messages, setMessages] = useState([]);
-  const [input, setInput] = useState('');
+  const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [showScrollBtn, setShowScrollBtn] = useState(false);
@@ -28,15 +37,20 @@ function Chat() {
   const messagesAreaRef = useRef(null);
   const inputRef = useRef(null);
   const fileInputRef = useRef(null);
-  const lastUserMessageRef = useRef('');
+  const lastUserMessageRef = useRef("");
 
-  const scrollToBottom = useCallback((force = false) => {
-    if (force || !showScrollBtn) {
-      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }
-  }, [showScrollBtn]);
+  const scrollToBottom = useCallback(
+    (force = false) => {
+      if (force || !showScrollBtn) {
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+      }
+    },
+    [showScrollBtn],
+  );
 
-  useEffect(() => { fetchHistory(); }, []);
+  useEffect(() => {
+    fetchHistory();
+  }, []);
 
   useEffect(() => {
     const area = messagesAreaRef.current;
@@ -45,8 +59,8 @@ function Chat() {
       const { scrollTop, scrollHeight, clientHeight } = area;
       setShowScrollBtn(scrollHeight - scrollTop - clientHeight > 100);
     };
-    area.addEventListener('scroll', onScroll);
-    return () => area.removeEventListener('scroll', onScroll);
+    area.addEventListener("scroll", onScroll);
+    return () => area.removeEventListener("scroll", onScroll);
   }, []);
 
   useEffect(() => {
@@ -56,18 +70,18 @@ function Chat() {
   }, [messages.length]);
 
   const fetchHistory = async () => {
-    const token = localStorage.getItem('token');
-    
+    const token = localStorage.getItem("token");
+
     // First, try to load from localStorage for immediate display
-    const localMessages = localStorage.getItem('chatMessages');
+    const localMessages = localStorage.getItem("chatMessages");
     if (localMessages) {
       try {
         setMessages(JSON.parse(localMessages));
       } catch (e) {
-        console.error('Failed to parse local messages:', e);
+        console.error("Failed to parse local messages:", e);
       }
     }
-    
+
     // Then fetch from backend
     try {
       const res = await fetch(`${API_BASE}/conversations?limit=20`, {
@@ -76,14 +90,22 @@ function Chat() {
       if (res.ok) {
         const data = await res.json();
         const loaded = [];
-        [...data].reverse().forEach(conv => {
-          loaded.push({ role: 'user',      content: conv.question, timestamp: conv.timestamp });
-          loaded.push({ role: 'assistant', content: conv.answer,   timestamp: conv.timestamp });
+        [...data].reverse().forEach((conv) => {
+          loaded.push({
+            role: "user",
+            content: conv.question,
+            timestamp: conv.timestamp,
+          });
+          loaded.push({
+            role: "assistant",
+            content: conv.answer,
+            timestamp: conv.timestamp,
+          });
         });
         setMessages(loaded);
       }
     } catch (e) {
-      console.error('History fetch failed:', e);
+      console.error("History fetch failed:", e);
     }
   };
 
@@ -91,21 +113,30 @@ function Chat() {
     const userInput = (text || input).trim();
     if (!userInput || isLoading) return;
 
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem("token");
     lastUserMessageRef.current = userInput;
-    const userMsg = { role: 'user', content: userInput, timestamp: new Date().toISOString() };
-    const aiMsg  = { role: 'assistant', content: '', sources: [], timestamp: new Date().toISOString() };
+    const userMsg = {
+      role: "user",
+      content: userInput,
+      timestamp: new Date().toISOString(),
+    };
+    const aiMsg = {
+      role: "assistant",
+      content: "",
+      sources: [],
+      timestamp: new Date().toISOString(),
+    };
 
-    setMessages(prev => [...prev, userMsg, aiMsg]);
-    setInput('');
+    setMessages((prev) => [...prev, userMsg, aiMsg]);
+    setInput("");
     setIsLoading(true);
     scrollToBottom(true);
 
     try {
       const res = await fetch(`${API_BASE}/chat`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({ message: userInput }),
@@ -115,58 +146,72 @@ function Chat() {
 
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
-      let fullContent = '';
+      let fullContent = "";
 
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
 
         const chunk = decoder.decode(value, { stream: true });
-        for (const line of chunk.split('\n')) {
-          if (!line.startsWith('data: ')) continue;
+        for (const line of chunk.split("\n")) {
+          if (!line.startsWith("data: ")) continue;
           try {
             const data = JSON.parse(line.slice(6));
             if (data.token) {
               fullContent += data.token;
-              setMessages(prev => {
+              setMessages((prev) => {
                 const updated = [...prev];
-                updated[updated.length - 1] = { ...updated[updated.length - 1], content: fullContent };
+                updated[updated.length - 1] = {
+                  ...updated[updated.length - 1],
+                  content: fullContent,
+                };
                 return updated;
               });
             }
             if (data.sources) {
-              setMessages(prev => {
+              setMessages((prev) => {
                 const updated = [...prev];
-                updated[updated.length - 1] = { ...updated[updated.length - 1], sources: data.sources };
+                updated[updated.length - 1] = {
+                  ...updated[updated.length - 1],
+                  sources: data.sources,
+                };
                 return updated;
               });
             }
             if (data.metrics) {
-              setMessages(prev => {
+              setMessages((prev) => {
                 const updated = [...prev];
-                updated[updated.length - 1] = { ...updated[updated.length - 1], metrics: data.metrics };
+                updated[updated.length - 1] = {
+                  ...updated[updated.length - 1],
+                  metrics: data.metrics,
+                };
                 return updated;
               });
             }
             if (data.error) {
-              setMessages(prev => {
+              setMessages((prev) => {
                 const updated = [...prev];
-                updated[updated.length - 1] = { ...updated[updated.length - 1], content: `⚠️ ${data.error}` };
+                updated[updated.length - 1] = {
+                  ...updated[updated.length - 1],
+                  content: `⚠️ ${data.error}`,
+                };
                 return updated;
               });
             }
-          } catch { /* ignore partial JSON */ }
+          } catch {
+            /* ignore partial JSON */
+          }
         }
       }
     } catch (err) {
-      setMessages(prev => {
+      setMessages((prev) => {
         const updated = [...prev];
         updated[updated.length - 1] = {
           ...updated[updated.length - 1],
           content: `⚠️ Connection error: ${err.message}. Make sure the backend is running on port 8000.`,
         };
         // Save to localStorage on error
-        localStorage.setItem('chatMessages', JSON.stringify(updated));
+        localStorage.setItem("chatMessages", JSON.stringify(updated));
         return updated;
       });
     } finally {
@@ -178,12 +223,12 @@ function Chat() {
   const handleRegenerate = () => {
     if (!lastUserMessageRef.current || isLoading) return;
     // Remove last assistant message
-    setMessages(prev => prev.slice(0, -1));
+    setMessages((prev) => prev.slice(0, -1));
     sendMessage(lastUserMessageRef.current);
   };
 
   const handleKeyDown = (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       sendMessage();
     }
@@ -193,22 +238,22 @@ function Chat() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem("token");
     setUploading(true);
 
     const progressMsg = {
-      role: 'assistant',
+      role: "assistant",
       content: `📎 Uploading **${file.name}**...`,
       timestamp: new Date().toISOString(),
     };
-    setMessages(prev => [...prev, progressMsg]);
+    setMessages((prev) => [...prev, progressMsg]);
 
     try {
       const formData = new FormData();
-      formData.append('file', file);
+      formData.append("file", file);
 
       const res = await fetch(`${API_BASE}/upload`, {
-        method: 'POST',
+        method: "POST",
         headers: { Authorization: `Bearer ${token}` },
         body: formData,
       });
@@ -216,7 +261,7 @@ function Chat() {
       const data = await res.json();
 
       if (res.ok) {
-        setMessages(prev => {
+        setMessages((prev) => {
           const updated = [...prev];
           updated[updated.length - 1] = {
             ...updated[updated.length - 1],
@@ -225,10 +270,10 @@ function Chat() {
           return updated;
         });
       } else {
-        throw new Error(data.detail || 'Upload failed');
+        throw new Error(data.detail || "Upload failed");
       }
     } catch (err) {
-      setMessages(prev => {
+      setMessages((prev) => {
         const updated = [...prev];
         updated[updated.length - 1] = {
           ...updated[updated.length - 1],
@@ -238,7 +283,7 @@ function Chat() {
       });
     } finally {
       setUploading(false);
-      if (fileInputRef.current) fileInputRef.current.value = '';
+      if (fileInputRef.current) fileInputRef.current.value = "";
     }
   };
 
@@ -250,7 +295,11 @@ function Chat() {
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       <div className="flex-1 flex flex-col lg:ml-64 min-h-screen">
-        <Navbar onMenuClick={() => setSidebarOpen(true)} title="AI Chat" subtitle="Ask anything about your memories" />
+        <Navbar
+          onMenuClick={() => setSidebarOpen(true)}
+          title="AI Chat"
+          subtitle="Ask anything about your memories"
+        />
 
         <main className="flex-1 flex flex-col overflow-hidden">
           {/* Messages area */}
@@ -265,9 +314,12 @@ function Chat() {
                   <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-purple-500/20 to-violet-600/20 border border-purple-500/30 flex items-center justify-center mb-6 animate-float">
                     <MessageSquare size={36} className="text-purple-400" />
                   </div>
-                  <h2 className="text-2xl font-bold text-white mb-2">Start a conversation</h2>
+                  <h2 className="text-2xl font-bold text-white mb-2">
+                    Start a conversation
+                  </h2>
                   <p className="text-slate-400 mb-8 max-w-sm">
-                    Ask questions about your memories, documents, and personal knowledge base — all processed locally.
+                    Ask questions about your memories, documents, and personal
+                    knowledge base — all processed locally.
                   </p>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full max-w-md">
                     {SUGGESTIONS.map((s, i) => (
@@ -277,7 +329,9 @@ function Chat() {
                         className="glass-card p-3 flex items-center gap-3 text-left hover:border-purple-500/40 transition group"
                         style={{ animationDelay: `${i * 80}ms` }}
                       >
-                        <span className="text-purple-400 group-hover:scale-110 transition-transform">{s.icon}</span>
+                        <span className="text-purple-400 group-hover:scale-110 transition-transform">
+                          {s.icon}
+                        </span>
                         <span className="text-sm text-slate-300">{s.text}</span>
                       </button>
                     ))}
@@ -291,7 +345,11 @@ function Chat() {
                       message={msg}
                       isLast={idx === messages.length - 1}
                       isLoading={isLoading}
-                      onRegenerate={idx === messages.length - 1 && msg.role === 'assistant' ? handleRegenerate : null}
+                      onRegenerate={
+                        idx === messages.length - 1 && msg.role === "assistant"
+                          ? handleRegenerate
+                          : null
+                      }
                     />
                   ))}
                   <div ref={messagesEndRef} />
@@ -328,7 +386,9 @@ function Chat() {
                 <label
                   htmlFor="chat-file-upload"
                   className={`p-3 rounded-xl glass border border-white/10 text-slate-400 hover:text-purple-400 hover:border-purple-500/40 cursor-pointer transition flex-shrink-0 ${
-                    uploading || isLoading ? 'opacity-40 pointer-events-none' : ''
+                    uploading || isLoading
+                      ? "opacity-40 pointer-events-none"
+                      : ""
                   }`}
                   title="Upload document"
                 >
@@ -340,17 +400,18 @@ function Chat() {
                   <textarea
                     ref={inputRef}
                     value={input}
-                    onChange={e => {
+                    onChange={(e) => {
                       setInput(e.target.value);
-                      e.target.style.height = 'auto';
-                      e.target.style.height = Math.min(e.target.scrollHeight, 160) + 'px';
+                      e.target.style.height = "auto";
+                      e.target.style.height =
+                        Math.min(e.target.scrollHeight, 160) + "px";
                     }}
                     onKeyDown={handleKeyDown}
                     placeholder="Ask about your memories... (Enter to send, Shift+Enter for newline)"
                     disabled={isLoading}
                     rows={1}
                     className="w-full px-4 py-3 glass-input rounded-xl text-sm text-white placeholder-slate-500 resize-none focus:ring-2 focus:ring-purple-500/40 disabled:opacity-50 leading-relaxed"
-                    style={{ minHeight: '48px', maxHeight: '160px' }}
+                    style={{ minHeight: "48px", maxHeight: "160px" }}
                     aria-label="Message input"
                   />
                   {input.length > 0 && (
@@ -372,54 +433,14 @@ function Chat() {
               </div>
 
               <p className="text-center text-[10px] text-slate-600 mt-2">
-                All processing is done locally · No data leaves your device · Powered by llama.cpp
+                All processing is done locally · No data leaves your device ·
+                Powered by llama.cpp
               </p>
             </div>
-
-            {/* Input Area */}
-            <div className="border-t border-slate-700/50 p-4 glass-card-dark">
-              <div className="max-w-4xl mx-auto flex gap-4">
-                <div className="flex-1 flex gap-3">
-                  <input
-                    type="file"
-                    onChange={handleFileUpload}
-                    disabled={uploading || isLoading}
-                    className="hidden"
-                    id="file-upload"
-                  />
-                  <label
-                    htmlFor="file-upload"
-                    className={`premium-card px-4 py-3 bg-slate-700/50 border border-slate-600/50 text-white rounded-lg hover:bg-slate-600/50 transition cursor-pointer flex items-center gap-2 btn-premium ${
-                      uploading || isLoading ? 'opacity-50 cursor-not-allowed' : ''
-                    }`}
-                  >
-                    <span className="text-xl">📎</span>
-                    <span className="hidden sm:inline">{uploading ? t('chat.uploading') : t('chat.upload')}</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && sendMessage()}
-                    placeholder={t('chat.placeholder')}
-                    disabled={isLoading}
-                    className="flex-1 px-4 py-3 bg-slate-700/50 border border-slate-600/50 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-transparent disabled:opacity-50 backdrop-blur-sm"
-                  />
-                </div>
-                <button
-                  onClick={sendMessage}
-                  disabled={isLoading || !input.trim()}
-                  className="premium-card px-6 py-3 bg-purple-600 text-white font-medium rounded-lg hover:bg-purple-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 btn-premium animate-glow"
-                >
-                  <span>{t('chat.send')}</span>
-                  <span className="text-xl">➤</span>
-                </button>
-              </div>
-            </div>
-          </main>
-        </div>
+          </div>
+        </main>
       </div>
-    </BackgroundLayout>
+    </div>
   );
 }
 

@@ -1,12 +1,8 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
 import { useAuth } from './AuthContext';
-import BackgroundLayout from './components/BackgroundLayout';
-import { backgroundImages } from './constants/backgrounds';
 
 function Login() {
-  const { t } = useTranslation();
   const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -22,25 +18,20 @@ function Login() {
     try {
       const response = await fetch('/api/auth/login', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
       });
 
       const data = await response.json();
 
       if (response.ok) {
-        console.log('Login successful, data:', data);
         login(data.access_token, data.user);
-        console.log('After login, navigating to dashboard');
         navigate('/dashboard');
       } else {
-        console.log('Login failed:', data);
-        setError(data.detail || t('auth.loginFailed'));
+        setError(data.detail || 'Login failed. Please check your credentials.');
       }
     } catch (err) {
-      setError(t('auth.connectionError'));
+      setError('Cannot connect to server. Make sure the backend is running.');
     } finally {
       setLoading(false);
     }
@@ -48,94 +39,163 @@ function Login() {
 
   return (
     <div
-      className="min-h-screen relative"
       style={{
-        backgroundImage: "url('/bg-clock.jpg')",
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundRepeat: 'no-repeat',
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '1rem',
+        background: 'linear-gradient(135deg, #0a0b1e 0%, #1a0a2e 50%, #0f0f23 100%)',
+        position: 'relative',
       }}
     >
-      {/* Dark overlay */}
-      <div className="absolute inset-0 bg-black/55 pointer-events-none" />
+      {/* Animated background blobs */}
+      <div style={{
+        position: 'absolute', top: '15%', left: '10%',
+        width: '300px', height: '300px', borderRadius: '50%',
+        background: 'radial-gradient(circle, rgba(139,92,246,0.15) 0%, transparent 70%)',
+        pointerEvents: 'none',
+      }} />
+      <div style={{
+        position: 'absolute', bottom: '20%', right: '10%',
+        width: '250px', height: '250px', borderRadius: '50%',
+        background: 'radial-gradient(circle, rgba(34,211,238,0.10) 0%, transparent 70%)',
+        pointerEvents: 'none',
+      }} />
 
-      {/* Content above overlay */}
-      <div className="relative z-10 min-h-screen flex items-center justify-center px-4">
-        <div className="max-w-md w-full">
-          {/* Logo/Brand */}
-          <div className="text-center mb-8">
-            <h1 className="text-4xl font-bold text-white mb-2">Memento AI</h1>
-            <p className="text-gray-400">{t('auth.loginTitle')}</p>
-          </div>
+      <div style={{ width: '100%', maxWidth: '440px', position: 'relative', zIndex: 10 }}>
+        {/* Brand */}
+        <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+          <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>🧠</div>
+          <h1 style={{ fontSize: '2rem', fontWeight: 700, color: '#fff', marginBottom: '0.25rem' }}>
+            Memento AI
+          </h1>
+          <p style={{ color: '#94a3b8', fontSize: '0.95rem' }}>Sign in to your account</p>
+        </div>
 
-          {/* Login Card */}
-          <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-8 shadow-2xl">
-            {error && (
-              <div className="mb-4 p-3 bg-red-500/20 border border-red-500/50 rounded-lg text-red-200 text-sm">
-                {error}
-              </div>
-            )}
-
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-2">
-                  {t('auth.email')}
-                </label>
-                <input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
-                  placeholder={t('auth.emailPlaceholder')}
-                />
-              </div>
-
-              <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-2">
-                  {t('auth.password')}
-                </label>
-                <input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
-                  placeholder={t('auth.passwordPlaceholder')}
-                />
-              </div>
-
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full py-3 bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-slate-900 transition disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {loading ? t('auth.signingIn') : t('auth.login')}
-              </button>
-            </form>
-
-            <div className="mt-6 text-center">
-              <p className="text-gray-400">
-                {t('auth.noAccount')}{' '}
-                <Link to="/signup" className="text-purple-400 hover:text-purple-300 font-medium transition">
-                  {t('auth.signUpLink')}
-                </Link>
-              </p>
+        {/* Card */}
+        <div style={{
+          background: 'rgba(255,255,255,0.07)',
+          backdropFilter: 'blur(20px)',
+          borderRadius: '1.25rem',
+          padding: '2rem',
+          border: '1px solid rgba(139,92,246,0.2)',
+          boxShadow: '0 25px 50px rgba(0,0,0,0.4)',
+        }}>
+          {error && (
+            <div style={{
+              marginBottom: '1rem',
+              padding: '0.75rem 1rem',
+              background: 'rgba(239,68,68,0.15)',
+              border: '1px solid rgba(239,68,68,0.4)',
+              borderRadius: '0.5rem',
+              color: '#fca5a5',
+              fontSize: '0.875rem',
+            }}>
+              {error}
             </div>
-          </div>
+          )}
 
-          {/* Back to Home */}
-          <div className="mt-6 text-center">
-            <Link to="/" className="text-gray-400 hover:text-white transition">
-              {t('common.back')}
-            </Link>
+          <form onSubmit={handleSubmit}>
+            <div style={{ marginBottom: '1.25rem' }}>
+              <label style={{ display: 'block', color: '#cbd5e1', fontSize: '0.875rem', fontWeight: 500, marginBottom: '0.5rem' }}>
+                Email
+              </label>
+              <input
+                id="login-email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                placeholder="you@example.com"
+                autoComplete="email"
+                style={{
+                  width: '100%',
+                  padding: '0.75rem 1rem',
+                  background: 'rgba(255,255,255,0.08)',
+                  border: '1px solid rgba(255,255,255,0.15)',
+                  borderRadius: '0.625rem',
+                  color: '#fff',
+                  fontSize: '0.95rem',
+                  outline: 'none',
+                  boxSizing: 'border-box',
+                  transition: 'border-color 0.2s',
+                }}
+                onFocus={(e) => e.target.style.borderColor = 'rgba(139,92,246,0.6)'}
+                onBlur={(e) => e.target.style.borderColor = 'rgba(255,255,255,0.15)'}
+              />
+            </div>
+
+            <div style={{ marginBottom: '1.5rem' }}>
+              <label style={{ display: 'block', color: '#cbd5e1', fontSize: '0.875rem', fontWeight: 500, marginBottom: '0.5rem' }}>
+                Password
+              </label>
+              <input
+                id="login-password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                placeholder="••••••••"
+                autoComplete="current-password"
+                style={{
+                  width: '100%',
+                  padding: '0.75rem 1rem',
+                  background: 'rgba(255,255,255,0.08)',
+                  border: '1px solid rgba(255,255,255,0.15)',
+                  borderRadius: '0.625rem',
+                  color: '#fff',
+                  fontSize: '0.95rem',
+                  outline: 'none',
+                  boxSizing: 'border-box',
+                  transition: 'border-color 0.2s',
+                }}
+                onFocus={(e) => e.target.style.borderColor = 'rgba(139,92,246,0.6)'}
+                onBlur={(e) => e.target.style.borderColor = 'rgba(255,255,255,0.15)'}
+              />
+            </div>
+
+            <button
+              id="login-submit"
+              type="submit"
+              disabled={loading}
+              style={{
+                width: '100%',
+                padding: '0.875rem',
+                background: loading ? 'rgba(139,92,246,0.4)' : 'linear-gradient(135deg, #7c3aed, #6d28d9)',
+                color: '#fff',
+                fontWeight: 600,
+                fontSize: '1rem',
+                borderRadius: '0.625rem',
+                border: 'none',
+                cursor: loading ? 'not-allowed' : 'pointer',
+                transition: 'opacity 0.2s, transform 0.1s',
+                boxShadow: '0 4px 15px rgba(124,58,237,0.4)',
+              }}
+              onMouseEnter={(e) => { if (!loading) e.target.style.opacity = '0.9'; }}
+              onMouseLeave={(e) => { e.target.style.opacity = '1'; }}
+            >
+              {loading ? 'Signing in...' : 'Sign In'}
+            </button>
+          </form>
+
+          <div style={{ marginTop: '1.5rem', textAlign: 'center' }}>
+            <p style={{ color: '#94a3b8', fontSize: '0.875rem' }}>
+              Don't have an account?{' '}
+              <Link to="/signup" style={{ color: '#a78bfa', fontWeight: 500, textDecoration: 'none' }}>
+                Sign up free
+              </Link>
+            </p>
           </div>
         </div>
+
+        <div style={{ marginTop: '1.5rem', textAlign: 'center' }}>
+          <Link to="/" style={{ color: '#64748b', fontSize: '0.875rem', textDecoration: 'none' }}>
+            ← Back to home
+          </Link>
         </div>
       </div>
-    </BackgroundLayout>
+    </div>
   );
 }
 
