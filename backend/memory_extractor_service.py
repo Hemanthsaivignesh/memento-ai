@@ -34,7 +34,7 @@ class MemoryExtractorService:
         Returns:
             List of structured MemorySchema objects
         """
-        if not text or len(text.strip()) < 20:
+        if not text or len(text.strip()) < 10:
             return []
         
         # Truncate text if too long to avoid context overflow (CPU-friendly limit)
@@ -296,12 +296,36 @@ JSON Output:"""
         # Must end with ] or }
         if not (text.endswith(']') or text.endswith('}')):
             return False
-        # Basic balance check
-        open_braces = text.count('{')
-        close_braces = text.count('}')
-        open_brackets = text.count('[')
-        close_brackets = text.count(']')
-        return open_braces == close_braces and open_brackets == close_brackets
+            
+        # Stack-based balance check
+        stack = []
+        for char in text:
+            if char in ('[', '{'):
+                stack.append(char)
+            elif char == ']':
+                if not stack or stack[-1] != '[':
+                    return False
+                stack.pop()
+            elif char == '}':
+                if not stack or stack[-1] != '{':
+                    return False
+                stack.pop()
+                
+        if stack:
+            return False
+            
+        # Additional heuristic: if we remove all whitespace-only empty braces '{}' and brackets '[]',
+        # any remaining '{' must have a corresponding ':' (colon).
+        temp = text
+        prev_len = len(temp) + 1
+        while len(temp) < prev_len:
+            prev_len = len(temp)
+            temp = re.sub(r'\{\s*\}|\[\s*\]', '', temp)
+            
+        if '{' in temp and ':' not in temp:
+            return False
+            
+        return True
     
     def _clean_json_response(self, response: str) -> Optional[str]:
         """

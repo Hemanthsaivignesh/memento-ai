@@ -5,7 +5,8 @@ from fastapi import FastAPI, Depends, HTTPException, UploadFile, File, Header, R
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
-from typing import Optional, List, AsyncGenerator
+from typing import Optional, List, AsyncGenerator, Union
+from datetime import datetime
 from dotenv import load_dotenv
 load_dotenv()
 from datetime import datetime
@@ -219,7 +220,7 @@ class MemoryResponse(BaseModel):
     tags: Optional[str]
     json_metadata: Optional[str]
     source_document: Optional[str]
-    created_at: datetime
+    created_at: Union[datetime, str]
     memory_type: Optional[str] = None
     importance: Optional[str] = None
     entities_people: Optional[str] = None
@@ -238,7 +239,7 @@ class ConversationResponse(BaseModel):
     id: int
     question: str
     answer: str
-    timestamp: datetime
+    timestamp: Union[datetime, str]
 
     class Config:
         from_attributes = True

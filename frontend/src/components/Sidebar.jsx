@@ -6,12 +6,15 @@ import {
   X, Menu, LogOut, ChevronRight
 } from 'lucide-react';
 
+import { useAuth } from '../AuthContext';
+
 function Sidebar({ isOpen, onClose }) {
   const location = useLocation();
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const { logout, user: authUser } = useAuth();
 
-  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const user = authUser || JSON.parse(localStorage.getItem('user') || '{}');
   const initials = user.name ? user.name.slice(0, 2).toUpperCase() : 'U';
 
   const menuItems = [
@@ -27,9 +30,7 @@ function Sidebar({ isOpen, onClose }) {
   ];
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    navigate('/');
+    logout();
   };
 
   return (

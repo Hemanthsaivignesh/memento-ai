@@ -36,20 +36,24 @@ export function AuthProvider({ children }) {
   const logout = useCallback(() => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
+    sessionStorage.removeItem('token');
+    sessionStorage.removeItem('user');
     setToken(null);
     setUser(null);
     navigate('/login');
   }, [navigate]);
 
   useEffect(() => {
-    const storedToken = localStorage.getItem('token');
-    const storedUser  = localStorage.getItem('user');
+    const storedToken = localStorage.getItem('token') || sessionStorage.getItem('token');
+    const storedUser  = localStorage.getItem('user') || sessionStorage.getItem('user');
 
     if (storedToken && storedUser) {
       if (isTokenExpired(storedToken)) {
         // Token has expired — clear and redirect to login
         localStorage.removeItem('token');
         localStorage.removeItem('user');
+        sessionStorage.removeItem('token');
+        sessionStorage.removeItem('user');
       } else {
         setToken(storedToken);
         setUser(JSON.parse(storedUser));
@@ -58,9 +62,14 @@ export function AuthProvider({ children }) {
     setLoading(false);
   }, []);
 
-  const login = (tokenData, userData) => {
-    localStorage.setItem('token', tokenData);
-    localStorage.setItem('user', JSON.stringify(userData));
+  const login = (tokenData, userData, rememberMe = false) => {
+    if (rememberMe) {
+      localStorage.setItem('token', tokenData);
+      localStorage.setItem('user', JSON.stringify(userData));
+    } else {
+      sessionStorage.setItem('token', tokenData);
+      sessionStorage.setItem('user', JSON.stringify(userData));
+    }
     setToken(tokenData);
     setUser(userData);
   };
