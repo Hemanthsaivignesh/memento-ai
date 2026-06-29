@@ -1,12 +1,8 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
 import { useAuth } from './AuthContext';
-import BackgroundLayout from './components/BackgroundLayout';
-import { backgroundImages } from './constants/backgrounds';
 
 function Login() {
-  const { t } = useTranslation();
   const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -23,9 +19,7 @@ function Login() {
     try {
       const response = await fetch('/api/auth/login', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
       });
 
@@ -37,11 +31,10 @@ function Login() {
         console.log('After login, navigating to dashboard');
         navigate('/dashboard');
       } else {
-        console.log('Login failed:', data);
-        setError(data.detail || t('auth.loginFailed'));
+        setError(data.detail || 'Login failed. Please check your credentials.');
       }
     } catch (err) {
-      setError(t('auth.connectionError'));
+      setError('Cannot connect to server. Make sure the backend is running.');
     } finally {
       setLoading(false);
     }
@@ -129,17 +122,102 @@ function Login() {
                 </Link>
               </p>
             </div>
-          </div>
+          )}
 
-          {/* Back to Home */}
-          <div className="mt-6 text-center">
-            <Link to="/" className="text-gray-400 hover:text-white transition">
-              {t('common.back')}
-            </Link>
+          <form onSubmit={handleSubmit}>
+            <div style={{ marginBottom: '1.25rem' }}>
+              <label style={{ display: 'block', color: '#cbd5e1', fontSize: '0.875rem', fontWeight: 500, marginBottom: '0.5rem' }}>
+                Email
+              </label>
+              <input
+                id="login-email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                placeholder="you@example.com"
+                autoComplete="email"
+                style={{
+                  width: '100%',
+                  padding: '0.75rem 1rem',
+                  background: 'rgba(255,255,255,0.08)',
+                  border: '1px solid rgba(255,255,255,0.15)',
+                  borderRadius: '0.625rem',
+                  color: '#fff',
+                  fontSize: '0.95rem',
+                  outline: 'none',
+                  boxSizing: 'border-box',
+                  transition: 'border-color 0.2s',
+                }}
+                onFocus={(e) => e.target.style.borderColor = 'rgba(139,92,246,0.6)'}
+                onBlur={(e) => e.target.style.borderColor = 'rgba(255,255,255,0.15)'}
+              />
+            </div>
+
+            <div style={{ marginBottom: '1.5rem' }}>
+              <label style={{ display: 'block', color: '#cbd5e1', fontSize: '0.875rem', fontWeight: 500, marginBottom: '0.5rem' }}>
+                Password
+              </label>
+              <input
+                id="login-password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                placeholder="••••••••"
+                autoComplete="current-password"
+                style={{
+                  width: '100%',
+                  padding: '0.75rem 1rem',
+                  background: 'rgba(255,255,255,0.08)',
+                  border: '1px solid rgba(255,255,255,0.15)',
+                  borderRadius: '0.625rem',
+                  color: '#fff',
+                  fontSize: '0.95rem',
+                  outline: 'none',
+                  boxSizing: 'border-box',
+                  transition: 'border-color 0.2s',
+                }}
+                onFocus={(e) => e.target.style.borderColor = 'rgba(139,92,246,0.6)'}
+                onBlur={(e) => e.target.style.borderColor = 'rgba(255,255,255,0.15)'}
+              />
+            </div>
+
+            <button
+              id="login-submit"
+              type="submit"
+              disabled={loading}
+              style={{
+                width: '100%',
+                padding: '0.875rem',
+                background: loading ? 'rgba(139,92,246,0.4)' : 'linear-gradient(135deg, #7c3aed, #6d28d9)',
+                color: '#fff',
+                fontWeight: 600,
+                fontSize: '1rem',
+                borderRadius: '0.625rem',
+                border: 'none',
+                cursor: loading ? 'not-allowed' : 'pointer',
+                transition: 'opacity 0.2s, transform 0.1s',
+                boxShadow: '0 4px 15px rgba(124,58,237,0.4)',
+              }}
+              onMouseEnter={(e) => { if (!loading) e.target.style.opacity = '0.9'; }}
+              onMouseLeave={(e) => { e.target.style.opacity = '1'; }}
+            >
+              {loading ? 'Signing in...' : 'Sign In'}
+            </button>
+          </form>
+
+          <div style={{ marginTop: '1.5rem', textAlign: 'center' }}>
+            <p style={{ color: '#94a3b8', fontSize: '0.875rem' }}>
+              Don't have an account?{' '}
+              <Link to="/signup" style={{ color: '#a78bfa', fontWeight: 500, textDecoration: 'none' }}>
+                Sign up free
+              </Link>
+            </p>
           </div>
         </div>
       </div>
-    </BackgroundLayout>
+    </div>
   );
 }
 

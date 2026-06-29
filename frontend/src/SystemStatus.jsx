@@ -236,7 +236,6 @@ function SystemStatus() {
             )}
           </div>
         </main>
-        </div>
       </div>
     </BackgroundLayout>
   );
