@@ -233,6 +233,7 @@ function SystemStatus() {
             )}
           </div>
         </main>
+        </div>
       </div>
     </div>
   );

@@ -364,7 +364,7 @@ const PerformanceDashboard = () => {
           </div>
         </main>
       </div>
-    </div>
+    </BackgroundLayout>
   );
 };
 

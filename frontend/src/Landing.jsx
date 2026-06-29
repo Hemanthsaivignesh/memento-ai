@@ -1,5 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import BackgroundLayout from './components/BackgroundLayout';
+import { backgroundImages } from './constants/backgrounds';
 
 function Landing() {
   const { t } = useTranslation();

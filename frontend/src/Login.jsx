@@ -1,9 +1,13 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { useAuth } from './AuthContext';
+import BackgroundLayout from './components/BackgroundLayout';
+import { backgroundImages } from './constants/backgrounds';
 
 function Login() {
   const { t } = useTranslation();
+  const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -16,7 +20,7 @@ function Login() {
     setLoading(true);
 
     try {
-      const response = await fetch('http://localhost:8000/auth/login', {
+      const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -27,10 +31,12 @@ function Login() {
       const data = await response.json();
 
       if (response.ok) {
-        localStorage.setItem('token', data.access_token);
-        localStorage.setItem('user', JSON.stringify(data.user));
+        console.log('Login successful, data:', data);
+        login(data.access_token, data.user);
+        console.log('After login, navigating to dashboard');
         navigate('/dashboard');
       } else {
+        console.log('Login failed:', data);
         setError(data.detail || t('auth.loginFailed'));
       }
     } catch (err) {
@@ -127,8 +133,9 @@ function Login() {
             </Link>
           </div>
         </div>
+        </div>
       </div>
-    </div>
+    </BackgroundLayout>
   );
 }
 

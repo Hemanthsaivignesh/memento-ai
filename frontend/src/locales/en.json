@@ -22,7 +22,9 @@
     "memories": "Memories",
     "timeline": "Timeline",
     "privacy": "Privacy",
-    "settings": "Settings"
+    "settings": "Settings",
+    "systemStatus": "System Status",
+    "performance": "Performance"
   },
   "landing": {
     "title": "Your Personal AI",

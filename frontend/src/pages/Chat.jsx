@@ -4,6 +4,8 @@ import { Send, Paperclip, ChevronDown, MessageSquare, Sparkles, Zap, BookOpen, B
 import Sidebar from '../components/Sidebar';
 import Navbar from '../components/Navbar';
 import ChatMessage from '../components/ChatMessage';
+import BackgroundLayout from '../components/BackgroundLayout';
+import { backgroundImages } from '../constants/backgrounds';
 
 const API_BASE = 'http://localhost:8000';
 
@@ -55,6 +57,18 @@ function Chat() {
 
   const fetchHistory = async () => {
     const token = localStorage.getItem('token');
+    
+    // First, try to load from localStorage for immediate display
+    const localMessages = localStorage.getItem('chatMessages');
+    if (localMessages) {
+      try {
+        setMessages(JSON.parse(localMessages));
+      } catch (e) {
+        console.error('Failed to parse local messages:', e);
+      }
+    }
+    
+    // Then fetch from backend
     try {
       const res = await fetch(`${API_BASE}/conversations?limit=20`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -151,6 +165,8 @@ function Chat() {
           ...updated[updated.length - 1],
           content: `⚠️ Connection error: ${err.message}. Make sure the backend is running on port 8000.`,
         };
+        // Save to localStorage on error
+        localStorage.setItem('chatMessages', JSON.stringify(updated));
         return updated;
       });
     } finally {
@@ -359,10 +375,51 @@ function Chat() {
                 All processing is done locally · No data leaves your device · Powered by llama.cpp
               </p>
             </div>
-          </div>
-        </main>
+
+            {/* Input Area */}
+            <div className="border-t border-slate-700/50 p-4 glass-card-dark">
+              <div className="max-w-4xl mx-auto flex gap-4">
+                <div className="flex-1 flex gap-3">
+                  <input
+                    type="file"
+                    onChange={handleFileUpload}
+                    disabled={uploading || isLoading}
+                    className="hidden"
+                    id="file-upload"
+                  />
+                  <label
+                    htmlFor="file-upload"
+                    className={`premium-card px-4 py-3 bg-slate-700/50 border border-slate-600/50 text-white rounded-lg hover:bg-slate-600/50 transition cursor-pointer flex items-center gap-2 btn-premium ${
+                      uploading || isLoading ? 'opacity-50 cursor-not-allowed' : ''
+                    }`}
+                  >
+                    <span className="text-xl">📎</span>
+                    <span className="hidden sm:inline">{uploading ? t('chat.uploading') : t('chat.upload')}</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && sendMessage()}
+                    placeholder={t('chat.placeholder')}
+                    disabled={isLoading}
+                    className="flex-1 px-4 py-3 bg-slate-700/50 border border-slate-600/50 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-transparent disabled:opacity-50 backdrop-blur-sm"
+                  />
+                </div>
+                <button
+                  onClick={sendMessage}
+                  disabled={isLoading || !input.trim()}
+                  className="premium-card px-6 py-3 bg-purple-600 text-white font-medium rounded-lg hover:bg-purple-700 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 btn-premium animate-glow"
+                >
+                  <span>{t('chat.send')}</span>
+                  <span className="text-xl">➤</span>
+                </button>
+              </div>
+            </div>
+          </main>
+        </div>
       </div>
-    </div>
+    </BackgroundLayout>
   );
 }
 
