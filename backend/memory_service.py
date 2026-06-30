@@ -239,12 +239,37 @@ class ConversationService:
     """Service layer for conversation operations."""
     
     @staticmethod
-    def create_conversation(db: Session, question: str, answer: str, user_id: Optional[int] = None) -> Conversation:
-        """Create a new conversation."""
+    def create_conversation(db: Session, question: str, answer: str, user_id: Optional[int] = None,
+                           session_id: Optional[str] = None, title: Optional[str] = None, is_pinned: int = 0) -> Conversation:
+        """Create a new conversation, auto-generating a title if it's the first message of a session."""
+        import uuid
+        import re
+        
+        if not session_id:
+            session_id = str(uuid.uuid4())
+            
+        if not title:
+            # Check if there is an existing conversation in this session to copy the title
+            existing = db.query(Conversation).filter(Conversation.session_id == session_id).first()
+            if existing:
+                title = existing.title
+            else:
+                # Auto-generate title from the first question
+                clean_q = question.strip()
+                # Strip common formatting characters
+                clean_q = re.sub(r'[#*`_\-\n\r\t]', ' ', clean_q).strip()
+                # Extract first 40 characters
+                title = clean_q[:40] + ("..." if len(clean_q) > 40 else "")
+                if not title:
+                    title = "New Chat"
+                    
         conversation = Conversation(
             question=question,
             answer=answer,
-            user_id=user_id
+            user_id=user_id,
+            session_id=session_id,
+            title=title,
+            is_pinned=is_pinned
         )
         db.add(conversation)
         db.commit()
