@@ -73,45 +73,75 @@ class FollowupGenerator:
         conversation_history: Optional[List[Dict]] = None
     ) -> List[str]:
         """
-        Generate relevant follow-up questions.
-        
-        Args:
-            user_message: The user's original message
-            assistant_response: The assistant's response
-            intent: Detected intent
-            has_documents: Whether user has documents
-            conversation_history: Recent conversation history
-        
-        Returns:
-            List of follow-up questions
+        Generate relevant follow-up questions dynamically based on message context.
         """
+        import re
+        
         followups = []
+        user_msg_lower = user_message.lower()
+        response_lower = assistant_response.lower()
         
-        # Get intent-specific follow-ups
-        intent_followups = self.INTENT_FOLLOWUPS.get(intent, self.INTENT_FOLLOWUPS['general'])
-        followups.extend(intent_followups[:3])
+        # 1. Extract dynamic keywords/topics from the user query
+        keywords = []
+        # Find capitalized terms or double quoted strings
+        quoted = re.findall(r'"([^"]+)"', user_message)
+        if quoted:
+            keywords.extend(quoted)
         
-        # Add context-aware follow-ups
-        if conversation_history:
-            contextual = self._generate_contextual_followups(conversation_history, intent)
-            followups.extend(contextual[:2])
+        # Find single word entities/topics
+        for word in re.findall(r'\b[A-Z][a-zA-Z0-9_-]+\b', user_message):
+            if word.lower() not in ['memento', 'ai', 'i', 'hello', 'hi', 'how', 'what', 'who']:
+                keywords.append(word)
+                
+        # Fallback to key nouns in the user message
+        if not keywords:
+            words = [w.strip("?.!,:;") for w in user_message.split() if len(w) > 4]
+            # pick up to 2 words
+            keywords.extend(words[:2])
+            
+        keywords = list(dict.fromkeys(keywords))[:3] # unique first 3
         
-        # Add document-aware follow-ups
-        if has_documents:
-            doc_followups = [
-                "Search for related information in my documents",
-                "What else do my documents say about this?",
-                "Find more details in my uploaded files"
-            ]
-            followups.extend(doc_followups[:2])
+        # 2. Generate dynamic questions based on keywords
+        for kw in keywords:
+            if kw:
+                followups.append(f"Tell me more about {kw}")
+                if has_documents:
+                    followups.append(f"What details do my files have on {kw}?")
         
-        # Add response-specific follow-ups
-        response_followups = self._generate_response_followups(assistant_response)
-        followups.extend(response_followups[:2])
+        # 3. Add intent-specific dynamic questions
+        if intent == 'coding' or '```' in assistant_response:
+            if 'complexity' not in user_msg_lower:
+                followups.append("What are the time and space complexity?")
+            if 'optimize' not in user_msg_lower:
+                followups.append("Can you optimize this code further?")
+            followups.append("Add error handling and comments to this code")
+        elif intent == 'document_query' or 'document' in user_msg_lower:
+            followups.append("Summarize this document")
+            followups.append("Extract key insights from this document")
+        elif intent == 'memory_query' or 'memory' in user_msg_lower:
+            followups.append("Show my recent memories")
+            followups.append("What did I learn this week?")
+        elif intent == 'summarization' or 'summarize' in user_msg_lower:
+            followups.append("What are the main points?")
+            followups.append("Explain this in simpler terms")
+            
+        # 4. Defaults
+        followups.extend([
+            "Give me a real-world example",
+            "Why is this important?",
+            "How does this work in detail?"
+        ])
         
-        # Deduplicate and limit
-        unique_followups = list(dict.fromkeys(followups))  # Preserve order, remove duplicates
-        return unique_followups[:4]
+        # Deduplicate, keep order, limit to 4
+        unique_followups = []
+        seen = set()
+        for f in followups:
+            f_clean = f.strip('?. ').lower()
+            if f_clean not in seen and len(unique_followups) < 4:
+                seen.add(f_clean)
+                unique_followups.append(f)
+                
+        return unique_followups
     
     def _generate_contextual_followups(
         self,
