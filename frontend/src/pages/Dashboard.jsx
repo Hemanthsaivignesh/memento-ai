@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import BackgroundLayout from '../components/BackgroundLayout';
+import { backgroundImages } from '../constants/backgrounds';
 import {
   FileText, Brain, MessageSquare, Cpu, HardDrive,
   Zap, Upload, ArrowRight, Activity, Wifi, Server,
@@ -9,7 +11,7 @@ import {
 import Sidebar from '../components/Sidebar';
 import Navbar from '../components/Navbar';
 
-const API_BASE = 'http://localhost:8000';
+const API_BASE = '/api';
 
 function AnimatedNumber({ value, duration = 1000 }) {
   const [display, setDisplay] = useState(0);
