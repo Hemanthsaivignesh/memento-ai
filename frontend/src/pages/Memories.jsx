@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import {
   Brain, Search, Filter, Trash2, ChevronDown, ChevronUp,
   Calendar, Tag, FileText, Users, MapPin, Building2,
-  Code, Star, SortAsc, RefreshCw, X
+  Code, Star, SortAsc, RefreshCw, X, Edit, Download, Copy, Check, ExternalLink
 } from 'lucide-react';
 import Sidebar from '../components/Sidebar';
 import Navbar from '../components/Navbar';
@@ -28,7 +28,7 @@ const IMPORTANCE_CONFIG = {
   low:    { badge: 'badge-emerald',dot: 'bg-emerald-400',label: 'Low' },
 };
 
-function MemoryCard({ memory, onDelete }) {
+function MemoryCard({ memory, onDelete, onClick }) {
   const [expanded, setExpanded] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
@@ -41,7 +41,6 @@ function MemoryCard({ memory, onDelete }) {
   const people  = memory.entities_people ? memory.entities_people.split(',').filter(Boolean) : [];
   const orgs    = memory.entities_organizations ? memory.entities_organizations.split(',').filter(Boolean) : [];
   const locs    = memory.entities_locations ? memory.entities_locations.split(',').filter(Boolean) : [];
-  const skills  = memory.entities_skills ? memory.entities_skills.split(',').filter(Boolean) : [];
 
   const date = memory.created_at
     ? new Date(memory.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
@@ -49,7 +48,8 @@ function MemoryCard({ memory, onDelete }) {
 
   const isLong = memory.content?.length > 200;
 
-  const handleDelete = async () => {
+  const handleDelete = async (e) => {
+    e.stopPropagation();
     setDeleting(true);
     await onDelete(memory.id);
     setDeleting(false);
@@ -57,112 +57,96 @@ function MemoryCard({ memory, onDelete }) {
   };
 
   return (
-    <div className="glass-card p-4 group animate-fade-in border border-transparent hover:border-purple-500/20">
-      {/* Header */}
-      <div className="flex items-start gap-2 mb-2">
-        <div className="w-8 h-8 rounded-lg bg-purple-500/15 flex items-center justify-center shrink-0 mt-0.5">
-          <TypeIcon size={14} className="text-purple-400" />
+    <div 
+      onClick={() => onClick(memory)}
+      className="glass-card p-4 group animate-fade-in border border-transparent hover:border-purple-500/20 cursor-pointer flex flex-col justify-between h-full"
+    >
+      <div>
+        {/* Header */}
+        <div className="flex items-start gap-2 mb-2">
+          <div className="w-8 h-8 rounded-lg bg-purple-500/15 flex items-center justify-center shrink-0 mt-0.5">
+            <TypeIcon size={14} className="text-purple-400" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <h4 className="text-sm font-semibold text-white line-clamp-2 leading-snug">{memory.title}</h4>
+            <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+              <span className={`badge ${typeCfg.badge}`}>{typeCfg.label}</span>
+              {impCfg && (
+                <span className={`badge ${impCfg.badge} flex items-center gap-1`}>
+                  <span className={`w-1.5 h-1.5 rounded-full ${impCfg.dot}`} />
+                  {impCfg.label}
+                </span>
+              )}
+            </div>
+          </div>
+          <button
+            onClick={(e) => { e.stopPropagation(); setShowConfirm(true); }}
+            className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg text-slate-600 hover:text-rose-400 hover:bg-rose-500/10 transition shrink-0"
+            aria-label="Delete memory"
+          >
+            <Trash2 size={13} />
+          </button>
         </div>
-        <div className="flex-1 min-w-0">
-          <h4 className="text-sm font-semibold text-white line-clamp-2 leading-snug">{memory.title}</h4>
-          <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
-            <span className={`badge ${typeCfg.badge}`}>{typeCfg.label}</span>
-            {impCfg && (
-              <span className={`badge ${impCfg.badge} flex items-center gap-1`}>
-                <span className={`w-1 h-1 rounded-full ${impCfg.dot}`} />
-                {impCfg.label}
-              </span>
+
+        {/* Content */}
+        <div className="relative mt-2">
+          <p className={`text-xs text-slate-400 leading-relaxed ${!expanded && isLong ? 'line-clamp-3' : ''}`}>
+            {memory.content}
+          </p>
+        </div>
+
+        {/* Entities */}
+        {(people.length > 0 || orgs.length > 0 || locs.length > 0) && (
+          <div className="mt-3 space-y-1">
+            {people.length > 0 && (
+              <div className="flex items-center gap-1 flex-wrap">
+                <span className="text-[10px] text-slate-500 font-medium">People:</span>
+                {people.slice(0, 2).map(p => <span key={p} className="badge badge-cyan">{p}</span>)}
+              </div>
             )}
           </div>
-        </div>
-        <button
-          onClick={() => setShowConfirm(true)}
-          className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg text-slate-600 hover:text-rose-400 hover:bg-rose-500/10 transition shrink-0"
-          aria-label="Delete memory"
-        >
-          <Trash2 size={13} />
-        </button>
-      </div>
+        )}
 
-      {/* Content */}
-      <div className="relative">
-        <p className={`text-xs text-slate-400 leading-relaxed ${!expanded && isLong ? 'line-clamp-3' : ''}`}>
-          {memory.content}
-        </p>
-        {isLong && (
-          <button
-            onClick={() => setExpanded(!expanded)}
-            className="flex items-center gap-1 text-[11px] text-purple-400 hover:text-purple-300 mt-1 transition"
-          >
-            {expanded ? <><ChevronUp size={11} /> Show less</> : <><ChevronDown size={11} /> Show more</>}
-          </button>
+        {/* Tags */}
+        {tags.length > 0 && (
+          <div className="flex flex-wrap gap-1 mt-3">
+            {tags.slice(0, 3).map(tag => (
+              <span key={tag} className="badge badge-purple">
+                <Tag size={9} className="mr-0.5" />{tag}
+              </span>
+            ))}
+          </div>
         )}
       </div>
 
-      {/* Entities */}
-      {(people.length > 0 || orgs.length > 0 || locs.length > 0 || skills.length > 0) && (
-        <div className="mt-3 space-y-1.5">
-          {people.length > 0 && (
-            <div className="flex items-center gap-1.5 flex-wrap">
-              <Users size={11} className="text-slate-500 shrink-0" />
-              {people.slice(0, 3).map(p => <span key={p} className="badge badge-cyan">{p}</span>)}
-            </div>
-          )}
-          {orgs.length > 0 && (
-            <div className="flex items-center gap-1.5 flex-wrap">
-              <Building2 size={11} className="text-slate-500 shrink-0" />
-              {orgs.slice(0, 2).map(o => <span key={o} className="badge badge-amber">{o}</span>)}
-            </div>
-          )}
-          {locs.length > 0 && (
-            <div className="flex items-center gap-1.5 flex-wrap">
-              <MapPin size={11} className="text-slate-500 shrink-0" />
-              {locs.slice(0, 2).map(l => <span key={l} className="badge badge-emerald">{l}</span>)}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Tags */}
-      {tags.length > 0 && (
-        <div className="flex flex-wrap gap-1 mt-3">
-          {tags.slice(0, 4).map(tag => (
-            <span key={tag} className="badge badge-purple">
-              <Tag size={9} className="mr-0.5" />{tag}
-            </span>
-          ))}
-          {tags.length > 4 && <span className="badge badge-slate">+{tags.length - 4}</span>}
-        </div>
-      )}
-
       {/* Footer */}
-      <div className="flex items-center gap-3 mt-3 pt-3 border-t border-white/5">
+      <div className="mt-4 pt-3 border-t border-white/5 flex items-center justify-between text-[10px] text-slate-600">
         {date && (
-          <span className="flex items-center gap-1 text-[10px] text-slate-600">
+          <span className="flex items-center gap-1">
             <Calendar size={9} /> {date}
           </span>
         )}
-        {memory.source_document || memory.source_file ? (
-          <span className="flex items-center gap-1 text-[10px] text-slate-600 truncate">
+        {(memory.source_document || memory.source_file) && (
+          <span className="truncate max-w-[120px] flex items-center gap-1" title={memory.source_document || memory.source_file}>
             <FileText size={9} /> {memory.source_document || memory.source_file}
           </span>
-        ) : null}
+        )}
       </div>
 
-      {/* Delete confirm */}
+      {/* Delete confirm inline */}
       {showConfirm && (
-        <div className="mt-3 pt-3 border-t border-rose-500/20 flex items-center gap-2 animate-fade-in">
-          <p className="text-xs text-rose-400 flex-1">Delete this memory?</p>
+        <div className="mt-3 pt-3 border-t border-rose-500/20 flex items-center gap-2 animate-fade-in" onClick={e => e.stopPropagation()}>
+          <p className="text-[10px] text-rose-400 flex-1">Delete memory?</p>
           <button
             onClick={handleDelete}
             disabled={deleting}
-            className="px-3 py-1 text-xs rounded-lg bg-rose-500/20 border border-rose-500/30 text-rose-400 hover:bg-rose-500/30 transition disabled:opacity-50"
+            className="px-2.5 py-1 text-[10px] rounded-lg bg-rose-500/20 border border-rose-500/30 text-rose-400 hover:bg-rose-500/30 transition disabled:opacity-50 font-semibold"
           >
-            {deleting ? '...' : 'Delete'}
+            Delete
           </button>
           <button
             onClick={() => setShowConfirm(false)}
-            className="px-3 py-1 text-xs rounded-lg bg-slate-700/40 border border-white/10 text-slate-400 hover:text-white transition"
+            className="px-2.5 py-1 text-[10px] rounded-lg bg-slate-700/40 border border-white/10 text-slate-400 hover:text-white transition"
           >
             Cancel
           </button>
@@ -181,13 +165,26 @@ function Memories() {
   const [search, setSearch] = useState('');
   const [sort, setSort] = useState('newest');
 
+  // Preview Modal States
+  const [selectedMemory, setSelectedMemory] = useState(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editTitle, setEditTitle] = useState('');
+  const [editContent, setEditContent] = useState('');
+  const [editTags, setEditTags] = useState('');
+  const [savingEdit, setSavingEdit] = useState(false);
+  const [copied, setCopied] = useState(false);
+
   useEffect(() => { fetchMemories(); }, [filter]);
 
   const fetchMemories = async () => {
     const token = localStorage.getItem('token');
     setLoading(true);
     try {
-      let url = filter !== 'all' ? `${API_BASE}/memories/type/${filter}` : `${API_BASE}/memories?limit=200`;
+      let url = filter !== 'all' ? `${API_BASE}/memories/tag/${filter}` : `${API_BASE}/memories?limit=200`;
+      // Check if filter corresponds to memory_type
+      if (filter !== 'all' && ['person', 'event', 'experience', 'project', 'education', 'skill', 'document'].includes(filter)) {
+        url = `${API_BASE}/memories/type/${filter}`;
+      }
       const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
       if (res.ok) setMemories(await res.json());
     } catch (e) {
@@ -204,10 +201,98 @@ function Memories() {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (res.ok) setMemories(prev => prev.filter(m => m.id !== id));
+      if (res.ok) {
+        setMemories(prev => prev.filter(m => m.id !== id));
+        if (selectedMemory?.id === id) {
+          setSelectedMemory(null);
+        }
+      }
     } catch (e) {
       console.error('Delete failed:', e);
     }
+  };
+
+  const handleCardClick = (memory) => {
+    setSelectedMemory(memory);
+    setEditTitle(memory.title || '');
+    setEditContent(memory.content || '');
+    setEditTags(memory.tags || '');
+    setIsEditing(false);
+    setCopied(false);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!selectedMemory) return;
+    setSavingEdit(true);
+    const token = localStorage.getItem('token');
+    try {
+      const res = await fetch(`${API_BASE}/memories/${selectedMemory.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          title: editTitle,
+          content: editContent,
+          tags: editTags,
+          memory_type: selectedMemory.memory_type,
+          importance: selectedMemory.importance,
+          source_document: selectedMemory.source_document || selectedMemory.source_file || ''
+        })
+      });
+      if (res.ok) {
+        const updated = await res.json();
+        // Update in list
+        setMemories(prev => prev.map(m => m.id === updated.id ? updated : m));
+        setSelectedMemory(updated);
+        setIsEditing(false);
+      }
+    } catch (err) {
+      console.error('Failed to save memory edit:', err);
+    } finally {
+      setSavingEdit(false);
+    }
+  };
+
+  const handleCopyContent = async () => {
+    if (!selectedMemory) return;
+    try {
+      await navigator.clipboard.writeText(selectedMemory.content);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy memory content:', err);
+    }
+  };
+
+  const handleDownload = (format) => {
+    if (!selectedMemory) return;
+    let mime = 'text/plain';
+    let ext = 'txt';
+    let dataStr = '';
+
+    if (format === 'json') {
+      mime = 'application/json';
+      ext = 'json';
+      dataStr = JSON.stringify(selectedMemory, null, 2);
+    } else if (format === 'md') {
+      mime = 'text/markdown';
+      ext = 'md';
+      dataStr = `# ${selectedMemory.title}\n\n- **Type**: ${selectedMemory.memory_type}\n- **Importance**: ${selectedMemory.importance}\n- **Date**: ${selectedMemory.created_at}\n\n## Content\n${selectedMemory.content}`;
+    } else {
+      dataStr = `Title: ${selectedMemory.title}\nType: ${selectedMemory.memory_type}\nImportance: ${selectedMemory.importance}\nDate: ${selectedMemory.created_at}\n\nContent:\n${selectedMemory.content}`;
+    }
+
+    const blob = new Blob([dataStr], { type: mime });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `memory_${selectedMemory.id}.${ext}`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   const filtered = memories
@@ -232,6 +317,59 @@ function Memories() {
     { id: 'all', label: 'All' },
     ...Object.entries(TYPE_CONFIG).map(([id, c]) => ({ id, label: c.label })),
   ];
+
+  // Helper to resolve preview elements
+  const renderSourcePreview = (filename) => {
+    if (!filename) return null;
+    const lower = filename.toLowerCase();
+    const sourceUrl = `/api/uploads/${encodeURIComponent(filename)}`;
+
+    if (lower.endsWith('.pdf')) {
+      return (
+        <iframe src={sourceUrl} className="w-full h-[350px] md:h-[450px] rounded-xl border border-white/5 bg-slate-900" title="PDF Preview" />
+      );
+    }
+    if (lower.endsWith('.png') || lower.endsWith('.jpg') || lower.endsWith('.jpeg') || lower.endsWith('.webp') || lower.endsWith('.gif')) {
+      return (
+        <div className="w-full flex items-center justify-center p-2 border border-white/5 rounded-xl bg-slate-900 overflow-hidden h-[350px] md:h-[450px]">
+          <img src={sourceUrl} alt="Source Preview" className="max-w-full max-h-full object-contain rounded" />
+        </div>
+      );
+    }
+    if (lower.endsWith('.mp3') || lower.endsWith('.wav') || lower.endsWith('.ogg') || lower.endsWith('.m4a')) {
+      return (
+        <div className="w-full p-6 border border-white/5 rounded-xl bg-slate-900 flex flex-col items-center justify-center h-[350px] md:h-[450px] gap-4">
+          <Brain size={48} className="text-purple-400 animate-pulse" />
+          <p className="text-xs text-slate-400 font-medium">Audio Recording Transcription</p>
+          <audio controls src={sourceUrl} className="w-full max-w-xs mt-2" />
+        </div>
+      );
+    }
+    if (lower.endsWith('.mp4') || lower.endsWith('.webm')) {
+      return (
+        <div className="w-full p-2 border border-white/5 rounded-xl bg-slate-900 flex items-center justify-center h-[350px] md:h-[450px]">
+          <video controls src={sourceUrl} className="max-w-full max-h-full rounded" />
+        </div>
+      );
+    }
+
+    return (
+      <div className="w-full p-6 border border-white/5 rounded-xl bg-slate-900/60 flex flex-col items-center justify-center h-[350px] md:h-[450px] text-center gap-2">
+        <FileText size={40} className="text-slate-500 mb-2" />
+        <p className="text-xs text-slate-300 font-medium">{filename}</p>
+        <p className="text-[10px] text-slate-500">Document contents extracted as memory content on the left panel.</p>
+        <a 
+          href={sourceUrl} 
+          target="_blank" 
+          rel="noopener noreferrer" 
+          className="mt-4 flex items-center gap-1.5 text-xs text-purple-400 hover:text-purple-300 font-medium transition"
+        >
+          <ExternalLink size={12} />
+          Open File in New Tab
+        </a>
+      </div>
+    );
+  };
 
   return (
     <BackgroundLayout image={backgroundImages.memories}>
@@ -272,7 +410,7 @@ function Memories() {
                 <select
                   value={sort}
                   onChange={e => setSort(e.target.value)}
-                  className="px-3 py-2.5 glass-input rounded-xl text-sm w-auto"
+                  className="px-3 py-2.5 glass-input rounded-xl text-sm w-auto cursor-pointer"
                   aria-label="Sort memories"
                 >
                   <option value="newest">Newest first</option>
@@ -330,7 +468,7 @@ function Memories() {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {filtered.map((m, i) => (
                   <div key={m.id} style={{ animationDelay: `${(i % 9) * 40}ms` }}>
-                    <MemoryCard memory={m} onDelete={handleDelete} />
+                    <MemoryCard memory={m} onDelete={handleDelete} onClick={handleCardClick} />
                   </div>
                 ))}
               </div>
@@ -351,6 +489,183 @@ function Memories() {
           </main>
         </div>
       </div>
+
+      {/* Details & Live Preview Modal */}
+      {selectedMemory && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fade-in">
+          <div className="relative w-full max-w-5xl glass border border-white/10 rounded-2xl flex flex-col max-h-[90vh] overflow-hidden shadow-2xl">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-4 border-b border-white/5">
+              <div className="flex items-center gap-2">
+                <Brain className="text-purple-400" size={18} />
+                <h3 className="text-sm font-bold text-white">Memory Details & Live Preview</h3>
+              </div>
+              <button
+                onClick={() => setSelectedMemory(null)}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            {/* Split Pane Body */}
+            <div className="flex-1 overflow-y-auto p-5 grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Left Pane: Interactive Details & Meta */}
+              <div className="space-y-4 flex flex-col justify-between">
+                <div className="space-y-4">
+                  {isEditing ? (
+                    <div className="space-y-3">
+                      <div>
+                        <label className="text-[10px] text-slate-400 font-semibold tracking-wider block mb-1">TITLE</label>
+                        <input
+                          type="text"
+                          value={editTitle}
+                          onChange={e => setEditTitle(e.target.value)}
+                          className="w-full px-3 py-2 bg-slate-900 border border-purple-500/40 rounded-xl text-sm text-white focus:outline-none focus:border-purple-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] text-slate-400 font-semibold tracking-wider block mb-1">CONTENT</label>
+                        <textarea
+                          value={editContent}
+                          onChange={e => setEditContent(e.target.value)}
+                          rows={6}
+                          className="w-full px-3 py-2 bg-slate-900 border border-purple-500/40 rounded-xl text-sm text-white focus:outline-none focus:border-purple-500 resize-none leading-relaxed"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] text-slate-400 font-semibold tracking-wider block mb-1">TAGS (comma separated)</label>
+                        <input
+                          type="text"
+                          value={editTags}
+                          onChange={e => setEditTags(e.target.value)}
+                          className="w-full px-3 py-2 bg-slate-900 border border-purple-500/40 rounded-xl text-sm text-white focus:outline-none focus:border-purple-500"
+                        />
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      <div>
+                        <h2 className="text-lg font-bold text-white leading-snug">{selectedMemory.title}</h2>
+                        <div className="flex flex-wrap items-center gap-1.5 mt-2">
+                          <span className="badge badge-purple">{selectedMemory.memory_type}</span>
+                          <span className="badge badge-slate">{selectedMemory.importance} importance</span>
+                        </div>
+                      </div>
+                      <div className="p-3.5 rounded-xl bg-slate-900/60 border border-white/5">
+                        <p className="text-xs text-slate-300 leading-relaxed whitespace-pre-wrap">{selectedMemory.content}</p>
+                      </div>
+                      {selectedMemory.tags && (
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <Tag size={10} className="text-slate-500" />
+                          {selectedMemory.tags.split(',').map(tag => (
+                            <span key={tag} className="badge badge-purple text-[10px]">{tag.trim()}</span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Metadata fields */}
+                  <div className="pt-4 border-t border-white/5 space-y-2">
+                    <h4 className="text-[10px] text-slate-500 font-bold tracking-wider">METADATA</h4>
+                    <div className="grid grid-cols-2 gap-3 text-[11px]">
+                      <div>
+                        <span className="text-slate-500 block">Created On</span>
+                        <span className="text-slate-300 font-medium">{new Date(selectedMemory.created_at).toLocaleString()}</span>
+                      </div>
+                      <div>
+                        <span className="text-slate-500 block">Source Document</span>
+                        <span className="text-slate-300 font-medium truncate block max-w-[200px]" title={selectedMemory.source_document || selectedMemory.source_file || 'Personal knowledge'}>
+                          {selectedMemory.source_document || selectedMemory.source_file || 'Personal knowledge'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Left Pane Actions */}
+                <div className="pt-4 border-t border-white/5 flex flex-wrap gap-2 justify-between items-center">
+                  <div className="flex gap-2">
+                    {isEditing ? (
+                      <>
+                        <button
+                          onClick={handleSaveEdit}
+                          disabled={savingEdit}
+                          className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold transition disabled:opacity-50"
+                        >
+                          {savingEdit ? 'Saving...' : 'Save'}
+                        </button>
+                        <button
+                          onClick={() => setIsEditing(false)}
+                          className="px-4 py-2 rounded-xl bg-slate-800 border border-white/5 hover:bg-slate-700 text-slate-300 text-xs font-bold transition"
+                        >
+                          Cancel
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <button
+                          onClick={() => setIsEditing(true)}
+                          className="px-4 py-2 rounded-xl bg-purple-600/20 border border-purple-500/30 hover:bg-purple-600/30 text-purple-300 text-xs font-bold transition flex items-center gap-1.5"
+                        >
+                          <Edit size={12} />
+                          Edit
+                        </button>
+                        <button
+                          onClick={handleCopyContent}
+                          className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
+                            copied 
+                              ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                              : 'bg-slate-800 border border-white/5 hover:bg-slate-700 text-slate-300'
+                          }`}
+                        >
+                          {copied ? <Check size={12} /> : <Copy size={12} />}
+                          {copied ? 'Copied!' : 'Copy'}
+                        </button>
+                      </>
+                    )}
+                  </div>
+
+                  {/* Format downloads */}
+                  {!isEditing && (
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[10px] text-slate-500 font-semibold uppercase">Download:</span>
+                      <button
+                        onClick={() => handleDownload('txt')}
+                        className="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-[10px] text-slate-300 font-medium transition"
+                      >
+                        TXT
+                      </button>
+                      <button
+                        onClick={() => handleDownload('md')}
+                        className="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-[10px] text-slate-300 font-medium transition"
+                      >
+                        MD
+                      </button>
+                      <button
+                        onClick={() => handleDownload('json')}
+                        className="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-[10px] text-slate-300 font-medium transition"
+                      >
+                        JSON
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Right Pane: Live Document Preview Frame */}
+              <div className="space-y-2">
+                <h4 className="text-[10px] text-slate-400 font-bold tracking-wider flex items-center gap-1">
+                  <FileText size={12} className="text-purple-400" />
+                  ORIGINAL SOURCE PREVIEW
+                </h4>
+                {renderSourcePreview(selectedMemory.source_document || selectedMemory.source_file)}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </BackgroundLayout>
   );
 }
