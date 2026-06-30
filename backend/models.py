@@ -94,6 +94,9 @@ class Conversation(Base):
     answer = Column(Text, nullable=False)
     timestamp = Column(DateTime, default=datetime.utcnow)
     user_id = Column(Integer, ForeignKey('users.id'), nullable=True, index=True)
+    session_id = Column(String(50), nullable=True, index=True)
+    title = Column(String(255), nullable=True)
+    is_pinned = Column(Integer, nullable=False, default=0)
     
     # Relationship
     user = relationship("User", back_populates="conversations")
