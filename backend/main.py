@@ -56,8 +56,14 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:5173",
         "http://localhost:5174",
+        "http://localhost:5175",
+        "http://localhost:5176",
+        "http://localhost:5177",
         "http://127.0.0.1:5173",
-        "http://127.0.0.1:5174"
+        "http://127.0.0.1:5174",
+        "http://127.0.0.1:5175",
+        "http://127.0.0.1:5176",
+        "http://127.0.0.1:5177"
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -106,39 +112,119 @@ async def shutdown_event():
     await async_processor.stop()
     print("Async processor stopped")
 
-# Initialize local LLM
-model_path = os.getenv("MODEL_PATH", "./models/model.gguf")
+# ---------------------------------------------------------------------------
+# Initialize local LLM — robust path resolution + detailed startup logging
+# ---------------------------------------------------------------------------
+
+def _resolve_model_path(raw_path: str) -> str:
+    """
+    Resolve MODEL_PATH to an absolute path.
+
+    Priority order:
+      1. The path as-is (works for absolute paths)
+      2. Relative to the backend directory (where main.py lives)
+      3. Relative to the project root (one level above backend)
+    """
+    backend_dir = os.path.dirname(os.path.abspath(__file__))
+    project_root = os.path.dirname(backend_dir)
+
+    candidates = [
+        raw_path,
+        os.path.join(backend_dir, raw_path),
+        os.path.join(project_root, raw_path.lstrip("./").lstrip("../")),
+        os.path.join(project_root, "models", os.path.basename(raw_path)),
+    ]
+
+    for candidate in candidates:
+        if os.path.isfile(candidate):
+            return os.path.abspath(candidate)
+
+    return raw_path  # Return original so the error message is informative
+
+
+_raw_model_path = os.getenv("MODEL_PATH", "../models/qwen2.5-3b-instruct-q4_k_m.gguf")
+model_path = _resolve_model_path(_raw_model_path)
 n_ctx = int(os.getenv("N_CTX", "2048"))
 n_threads = int(os.getenv("N_THREADS", "4"))
 
 llm = None
 model_loaded = False
 
-# Check if model file exists before attempting to load
-if os.path.exists(model_path):
+print("=" * 60)
+print("  Memento AI — Local LLM Initialization")
+print("=" * 60)
+print(f"  Checking model path : {model_path}")
+print(f"  Context size        : {n_ctx}")
+print(f"  CPU threads         : {n_threads}")
+print(f"  GPU offload layers  : 0 (CPU-only)")
+print("=" * 60)
+
+if not os.path.isfile(model_path):
+    print(f"[ERROR] Model file not found: {model_path}")
+    print(f"  Raw MODEL_PATH value in .env: {_raw_model_path}")
+    print()
+    print("  To fix, run ONE of these:")
+    print("    python setup_models.py --model llm")
+    print(f"    OR place a GGUF file at: {model_path}")
+    print("  The system will run in degraded mode (no AI chat).")
+    print("=" * 60)
+else:
+    print(f"  Loading GGUF model  : {os.path.basename(model_path)}")
+    print(f"  File size           : {os.path.getsize(model_path) / 1024**2:.1f} MB")
+
     try:
+        # Test that llama_cpp imported the real library, not the dummy stub
+        from llama_cpp import Llama as _LlamaCheck  # noqa: F401
+        if not hasattr(_LlamaCheck, "create_chat_completion"):
+            raise ImportError("Loaded the dummy Llama stub — llama-cpp-python may not be installed.")
+
+        print("  Initializing llama.cpp ...")
+        print("  Loading tokenizer   ...")
+
         llm = LocalLLM(model_path=model_path, n_ctx=n_ctx, n_threads=n_threads)
         model_loaded = True
-        print(f"[SUCCESS] Model loaded successfully from {model_path}")
-        
+
+        print(f"  [SUCCESS] Model loaded in {llm.model_load_time:.2f}s")
+        print(f"  Ready — CPU inference enabled. Fully offline.")
+        print("=" * 60)
+
         # Record model load metric
         from database import SessionLocal
         db = SessionLocal()
         try:
             metrics_service = MetricsService(db)
-            model_name = model_path.split('/')[-1] if '/' in model_path else model_path
+            model_name = os.path.basename(model_path)
             metrics_service.record_model_load(model_name, llm.model_load_time)
         finally:
             db.close()
+
+    except ImportError as e:
+        print(f"[ERROR] llama-cpp-python not properly installed: {e}")
+        print("  Run: uv pip install llama-cpp-python")
+        print("       --extra-index-url https://abetlen.github.io/llama-cpp-python/whl/cpu")
+        print("  The system will run in degraded mode (no AI chat).")
+        print("=" * 60)
+    except FileNotFoundError as e:
+        print(f"[ERROR] Model file disappeared during loading: {e}")
+        print("  The system will run in degraded mode (no AI chat).")
+        print("=" * 60)
+    except RuntimeError as e:
+        err_msg = str(e).lower()
+        if "not a valid gguf" in err_msg or "magic" in err_msg or "corrupt" in err_msg:
+            print(f"[ERROR] Model file is corrupted or invalid GGUF format.")
+            print(f"  Details: {e}")
+            print("  Please re-download the model:")
+            print("    python setup_models.py --model llm --force")
+        else:
+            print(f"[ERROR] llama.cpp failed to initialize: {e}")
+        print("  The system will run in degraded mode (no AI chat).")
+        print("=" * 60)
     except Exception as e:
-        print(f"[ERROR] Failed to load model: {e}")
-        print(f"  Model path: {model_path}")
-        print(f"  The system will run in degraded mode (no AI chat).")
-else:
-    print(f"[ERROR] Model file not found: {model_path}")
-    print(f"  Please run 'python setup_models.py' to download required models.")
-    print(f"  Or manually download a GGUF model and update MODEL_PATH in .env")
-    print(f"  The system will run in degraded mode (no AI chat).")
+        print(f"[ERROR] Unexpected error loading model: {type(e).__name__}: {e}")
+        print("  The system will run in degraded mode (no AI chat).")
+        print("=" * 60)
+
+
 
 
 # Pydantic models
@@ -657,8 +743,7 @@ async def get_timeline(current_user: User = Depends(get_current_user), db: Sessi
 async def chat(request: Request, chat_data: ChatRequest, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     if llm is None:
         async def error_stream():
-            error_msg = "AI model not loaded. Please download models using 'python setup_models.py' "
-            error_msg += "or place a GGUF model in the models/ directory and update MODEL_PATH in .env"
+            error_msg = "Memento AI couldn't find a local AI model. Please install a compatible GGUF model. See Setup Guide."
             yield f"data: {json.dumps({'error': error_msg})}\n\n"
         return StreamingResponse(error_stream(), media_type="text/event-stream")
     
