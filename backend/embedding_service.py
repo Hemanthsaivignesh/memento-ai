@@ -1,6 +1,5 @@
 import pickle
 import numpy as np
-from sentence_transformers import SentenceTransformer
 from typing import Optional
 import os
 
@@ -23,7 +22,25 @@ class EmbeddingService:
     
     def _load_model(self):
         """Load the local sentence-transformers model."""
+        # Check if embeddings are disabled or if system RAM is very low (< 1.5 GB)
+        disable_embeddings = os.getenv("DISABLE_EMBEDDINGS", "false").lower() == "true"
+        
         try:
+            import psutil
+            total_ram_gb = psutil.virtual_memory().total / (1024 ** 3)
+            if total_ram_gb < 1.5:
+                print(f"Warning: Low RAM detected ({total_ram_gb:.2f} GB). Disabling sentence-transformers to prevent Out-Of-Memory crashes.")
+                disable_embeddings = True
+        except Exception:
+            pass
+
+        if disable_embeddings:
+            print("Embedding model loading skipped (disabled or insufficient RAM). Falling back to keyword search.")
+            self._model = None
+            return
+
+        try:
+            from sentence_transformers import SentenceTransformer
             # Use a lightweight model that works offline
             model_name = os.getenv("EMBEDDING_MODEL", "sentence-transformers/all-MiniLM-L6-v2")
             self._model = SentenceTransformer(model_name)
